@@ -1,0 +1,150 @@
+/* ========================================================
+   CSS ÉP CARD BẰNG NHAU CHẰN CHẶN - CHỮ KHÔNG LỆCH HÀNG
+   ======================================================== */
+
+.products.row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+}
+
+.product-square-card {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  padding: 16px !important;
+  border-radius: 16px !important;
+  background: #ffffff !important;
+  border: 1px solid #eef2f6 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02) !important;
+
+  /* ÉP CỐ ĐỊNH CHIỀU CAO CARD ĐỂ KHÔNG BỊ THỤT THÒ */
+  height: 390px !important;
+  width: 100% !important;
+  max-width: 265px !important;
+  margin: 0 auto !important;
+  transition:
+    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.25s ease !important;
+}
+
+.product-square-card:hover {
+  transform: translateY(-6px) !important;
+  box-shadow: 0 16px 36px rgba(102, 126, 234, 0.12) !important;
+  border-color: #667eea !important;
+}
+
+/* Ép khung ảnh bằng nhau tuyệt đối */
+.img-square-box {
+  width: 100% !important;
+  height: 165px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background-color: #ffffff !important;
+  margin-bottom: 14px !important;
+  overflow: hidden !important;
+}
+
+.img-square-box img {
+  max-width: 95% !important;
+  max-height: 95% !important;
+  object-fit: contain !important;
+}
+
+/* Thân chữ chi tiết */
+.card-square-body {
+  text-align: left !important;
+  padding: 0 2px !important;
+  flex-grow: 1 !important;
+}
+
+.card-square-body h3 {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: #1e293b !important;
+  margin: 0 0 6px 0 !important;
+  line-height: 1.4 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+  height: 38px !important; /* Cố định chiều cao text */
+}
+
+.card-square-body .product-price {
+  font-size: 16px !important;
+  color: #e53935 !important;
+  font-weight: 700 !important;
+  margin: 0 0 8px 0 !important;
+}
+
+.mini-chips {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 4px !important;
+  margin-bottom: 8px !important;
+  height: 22px !important; /* Khống chế dòng chip không đẩy lệch khung */
+}
+
+.mini-chips .m-chip {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+  padding: 2px 7px !important;
+  border-radius: 6px !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+}
+
+.square-rating {
+  font-size: 11px !important;
+  color: #ffb800 !important;
+  margin-bottom: 14px !important;
+}
+
+/* Nút mua hàng bo tròn mượt mà */
+.square-action {
+  width: 100% !important;
+  margin-top: auto !important;
+}
+
+.btn-square-buy {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: #ffffff !important;
+  width: 100% !important;
+  padding: 9px 0 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  border: none !important;
+  border-radius: 25px !important;
+  cursor: pointer !important;
+}
+
+/* Nút chuyển trang ở giữa */
+.pagination-container {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.custom-pagination {
+  padding-left: 0 !important;
+  margin: 0 auto !important;
+}
+
+.custom-pagination .page-link {
+  width: 40px !important;
+  height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 50% !important;
+  font-weight: 700 !important;
+}
+
+.custom-pagination .page-item.active .page-link {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: #ffffff !important;
+}
