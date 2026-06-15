@@ -1,5 +1,5 @@
 /* ========================================================
-   CSS ÉP CARD BẰNG NHAU CHẰN CHẶN - CHỮ KHÔNG LỆCH HÀNG
+   CSS ÉP CARD BẰNG NHAU CHẰN CHẶN - CHỢ CÔNG NGHỆ CAO CẤP
    ======================================================== */
 
 .products.row {
@@ -13,24 +13,26 @@
   justify-content: space-between !important;
   padding: 16px !important;
   border-radius: 16px !important;
-  background: #ffffff !important;
-  border: 1px solid #eef2f6 !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02) !important;
+  background: #0f131c !important; /* Obsidian Card Background */
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
 
   /* ÉP CỐ ĐỊNH CHIỀU CAO CARD ĐỂ KHÔNG BỊ THỤT THÒ */
-  height: 390px !important;
+  height: 395px !important;
   width: 100% !important;
   max-width: 265px !important;
   margin: 0 auto !important;
   transition:
-    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important,
+    border-color 0.25s ease !important,
     box-shadow 0.25s ease !important;
+    cursor: pointer !important;
 }
 
 .product-square-card:hover {
   transform: translateY(-6px) !important;
-  box-shadow: 0 16px 36px rgba(102, 126, 234, 0.12) !important;
-  border-color: #667eea !important;
+  box-shadow: 0 16px 36px rgba(212, 175, 55, 0.08) !important;
+  border-color: #d4af37 !important;
 }
 
 /* Ép khung ảnh bằng nhau tuyệt đối */
@@ -41,14 +43,21 @@
   align-items: center !important;
   justify-content: center !important;
   background-color: #ffffff !important;
+  border-radius: 8px !important;
   margin-bottom: 14px !important;
   overflow: hidden !important;
+  padding: 8px !important;
 }
 
 .img-square-box img {
   max-width: 95% !important;
   max-height: 95% !important;
   object-fit: contain !important;
+  transition: transform 0.3s ease !important;
+}
+
+.product-square-card:hover .img-square-box img {
+  transform: scale(1.05) !important;
 }
 
 /* Thân chữ chi tiết */
@@ -61,7 +70,7 @@
 .card-square-body h3 {
   font-size: 14px !important;
   font-weight: 600 !important;
-  color: #1e293b !important;
+  color: #ffffff !important;
   margin: 0 0 6px 0 !important;
   line-height: 1.4 !important;
   display: -webkit-box !important;
@@ -73,7 +82,7 @@
 
 .card-square-body .product-price {
   font-size: 16px !important;
-  color: #e53935 !important;
+  color: #d4af37 !important; /* Luxury Gold Price */
   font-weight: 700 !important;
   margin: 0 0 8px 0 !important;
 }
@@ -84,15 +93,17 @@
   gap: 4px !important;
   margin-bottom: 8px !important;
   height: 22px !important; /* Khống chế dòng chip không đẩy lệch khung */
+  overflow: hidden !important;
 }
 
 .mini-chips .m-chip {
-  background: #f1f5f9 !important;
-  color: #475569 !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: #94a3b8 !important;
   padding: 2px 7px !important;
   border-radius: 6px !important;
   font-size: 10px !important;
   font-weight: 600 !important;
+  border: 1px solid rgba(255, 255, 255, 0.03) !important;
 }
 
 .square-rating {
@@ -108,8 +119,8 @@
 }
 
 .btn-square-buy {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-  color: #ffffff !important;
+  background: linear-gradient(135deg, #d4af37 0%, #b89020 100%) !important;
+  color: #000000 !important;
   width: 100% !important;
   padding: 9px 0 !important;
   font-size: 12px !important;
@@ -117,6 +128,12 @@
   border: none !important;
   border-radius: 25px !important;
   cursor: pointer !important;
+  transition: all 0.3s ease !important;
+}
+
+.btn-square-buy:hover {
+  background: linear-gradient(135deg, #f1c40f 0%, #d4af37 100%) !important;
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3) !important;
 }
 
 /* Nút chuyển trang ở giữa */
@@ -138,13 +155,26 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  color: #475569 !important;
-  border: 1px solid #e2e8f0 !important;
+  color: #94a3b8 !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
   border-radius: 50% !important;
   font-weight: 700 !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+
+.custom-pagination .page-link:hover {
+  border-color: #d4af37 !important;
+  color: #ffffff !important;
 }
 
 .custom-pagination .page-item.active .page-link {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-  color: #ffffff !important;
+  background: var(--accent-gold) !important;
+  color: #000000 !important;
+  border-color: var(--accent-gold) !important;
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3) !important;
+}
+
+.custom-pagination .page-item.disabled .page-link {
+  opacity: 0.3 !important;
+  pointer-events: none !important;
 }

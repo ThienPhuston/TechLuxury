@@ -1,4 +1,4 @@
-const PRODUCTS_PER_PAGE = 4;
+const PRODUCTS_PER_PAGE = 8;
 let currentProductPage = 1;
 
 function renderProductPagination() {
