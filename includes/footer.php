@@ -22,7 +22,9 @@ if (!isset($path_prefix)) {
                 <li><a href="<?php echo $path_prefix; ?>page/about.php">Chính sách bảo hành</a></li>
                 <li><a href="<?php echo $path_prefix; ?>page/contact.php">Hệ thống cửa hàng</a></li>
                 <li><a href="<?php echo $path_prefix; ?>Account/login.php">Tài khoản Smember</a></li>
-                <li><a href="<?php echo $path_prefix; ?>admin/index.php">Quản trị hệ thống</a></li>
+                <?php if (isset($_SESSION['user']) && $_SESSION['user']['role'] === 'admin'): ?>
+                    <li><a href="<?php echo $path_prefix; ?>admin/index.php">Quản trị hệ thống</a></li>
+                <?php endif; ?>
             </ul>
         </div>
 
@@ -82,6 +84,9 @@ if (!isset($path_prefix)) {
                 <span class="product-badge" id="modal-product-badge">NỔI BẬT</span>
                 <h2 id="modal-product-title">Tên sản phẩm</h2>
                 <div class="modal-product-price" id="modal-product-price">0đ</div>
+                <div class="modal-product-stock text-secondary small mb-3" id="modal-product-stock" style="font-size: 13px;">
+                    <!-- Stock status loaded dynamically -->
+                </div>
                 
                 <div class="specs-section">
                     <h4>Thông số nổi bật:</h4>

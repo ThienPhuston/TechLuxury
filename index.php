@@ -48,60 +48,51 @@ include("includes/header.php");
 </section>
 
 <!-- Luxury Sale Section (Promotional Products with Fixed Image Paths) -->
+<?php
+require_once 'includes/db.php';
+try {
+    $sale_stmt = $conn->query("SELECT * FROM products WHERE is_sale = 1 LIMIT 3");
+    $sale_products = $sale_stmt->fetchAll();
+} catch (PDOException $e) {
+    $sale_products = [];
+}
+?>
 <section class="sale-section">
     <div class="container">
         <h2>🔥 SẢN PHẨM KHUYẾN MÃI ĐẶC BIỆT</h2>
         <div class="products-grid">
-            <!-- Card 1: Macbook Pro M4 -->
+            <?php foreach ($sale_products as $p) { 
+                $disc_pct = 20; // Default discount percentage display
+                $original_price = $p['price'] / (1 - $disc_pct / 100);
+            ?>
             <div class="sale-card" 
-                 data-title="Macbook Pro M4" 
-                 data-price="59.990.000đ" 
-                 data-img="./images/macbook-pro-14-inch-m4-pro-24gb-1tb-20gpu-bac-1-639104240462766154-750x500.jpg" 
-                 data-specs="Chip Apple M4, RAM 16GB, SSD 512GB, Màn hình Liquid Retina XDR 14 inch" 
-                 data-category="laptop">
-                <div class="sale-badge">-15%</div>
-                <img src="./images/macbook-pro-14-inch-m4-pro-24gb-1tb-20gpu-bac-1-639104240462766154-750x500.jpg" alt="Macbook Pro M4">
+                 data-title="<?php echo htmlspecialchars($p['name']); ?>" 
+                 data-price="<?php echo number_format($p['price'], 0, '', '.'); ?>đ" 
+                 data-img="./images/<?php echo htmlspecialchars($p['img']); ?>" 
+                 data-specs="<?php echo htmlspecialchars($p['specs'] ?? ''); ?>" 
+                 data-category="<?php echo htmlspecialchars($p['category']); ?>"
+                 data-stock="<?php echo $p['stock']; ?>">
+                <div class="sale-badge">-<?php echo $disc_pct; ?>%</div>
+                <img src="./images/<?php echo htmlspecialchars($p['img']); ?>" alt="<?php echo htmlspecialchars($p['name']); ?>">
                 <div>
-                    <h3>Macbook Pro M4</h3>
-                    <p class="original-price"><del>70.990.000đ</del></p>
-                    <p class="sale-price">59.990.000đ</p>
+                    <h3><?php echo htmlspecialchars($p['name']); ?></h3>
+                    <p class="original-price"><del><?php echo number_format($original_price, 0, '', '.'); ?>đ</del></p>
+                    <p class="sale-price"><?php echo number_format($p['price'], 0, '', '.'); ?>đ</p>
+                    <p class="product-stock small text-secondary m-0 mb-2" style="font-size: 11px;">
+                        <?php if ($p['stock'] > 0) { ?>
+                            Còn lại: <strong class="text-success"><?php echo $p['stock']; ?></strong> sản phẩm
+                        <?php } else { ?>
+                            <strong class="text-danger"><i class="fas fa-exclamation-triangle"></i> Hết hàng</strong>
+                        <?php } ?>
+                    </p>
                 </div>
-                <button class="btn-buy">Thêm vào giỏ</button>
+                <?php if ($p['stock'] > 0) { ?>
+                    <button class="btn-buy">Thêm vào giỏ</button>
+                <?php } else { ?>
+                    <button class="btn-buy disabled" disabled style="background: rgba(255,255,255,0.05); color: #555; border: 1px solid rgba(255,255,255,0.05); cursor: not-allowed;">Hết hàng</button>
+                <?php } ?>
             </div>
-
-            <!-- Card 2: iPhone 16 Pro Max -->
-            <div class="sale-card" 
-                 data-title="iPhone 16 Pro Max" 
-                 data-price="35.990.000đ" 
-                 data-img="./images/ip16pm.webp" 
-                 data-specs="Chip A18 Pro AI, RAM 8GB, Bộ nhớ 256GB, Camera 48MP Zoom 5x" 
-                 data-category="phone">
-                <div class="sale-badge">-20%</div>
-                <img src="./images/ip16pm.webp" alt="iPhone 16 Pro Max">
-                <div>
-                    <h3>iPhone 16 Pro Max</h3>
-                    <p class="original-price"><del>44.990.000đ</del></p>
-                    <p class="sale-price">35.990.000đ</p>
-                </div>
-                <button class="btn-buy">Thêm vào giỏ</button>
-            </div>
-
-            <!-- Card 3: Galaxy S24 Ultra -->
-            <div class="sale-card" 
-                 data-title="Galaxy S24 Ultra" 
-                 data-price="31.990.000đ" 
-                 data-img="./images/Galaxy s24ultra.webp" 
-                 data-specs="Chip Snapdragon 8 Gen 3, Camera 200MP AI, Bút S-Pen tích hợp, Titanium Frame" 
-                 data-category="phone">
-                <div class="sale-badge">-25%</div>
-                <img src="./images/Galaxy s24ultra.webp" alt="Galaxy S24 Ultra">
-                <div>
-                    <h3>Galaxy S24 Ultra</h3>
-                    <p class="original-price"><del>42.990.000đ</del></p>
-                    <p class="sale-price">31.990.000đ</p>
-                </div>
-                <button class="btn-buy">Thêm vào giỏ</button>
-            </div>
+            <?php } ?>
         </div>
     </div>
 </section>
@@ -201,307 +192,79 @@ include("includes/header.php");
 
         <div class="products row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3 justify-content-center" id="featured-products-container">
             
-            <!-- Product 1 -->
-            <div class="col product-col" data-category="laptop">
+            <?php
+            try {
+                $stmt = $conn->query("SELECT * FROM products ORDER BY id ASC");
+                $db_products = $stmt->fetchAll();
+            } catch (PDOException $e) {
+                $db_products = [];
+            }
+            foreach ($db_products as $i => $p) {
+            ?>
+            <div class="col product-col" data-category="<?php echo htmlspecialchars($p['category']); ?>">
                 <div class="card product-square-card"
-                     data-title="Macbook Pro M4" 
-                     data-price="59.990.000đ" 
-                     data-img="./images/macbook-pro-14-inch-m4-pro-24gb-1tb-20gpu-bac-1-639104240462766154-750x500.jpg" 
-                     data-specs="Chip Apple M4, RAM 16G, SSD 512G, Màn hình Liquid Retina XDR" 
-                     data-category="laptop">
+                     data-title="<?php echo htmlspecialchars($p['name']); ?>" 
+                     data-price="<?php echo number_format($p['price'], 0, '', '.'); ?>đ" 
+                     data-img="./images/<?php echo htmlspecialchars($p['img']); ?>" 
+                     data-specs="<?php echo htmlspecialchars($p['specs'] ?? ''); ?>" 
+                     data-category="<?php echo htmlspecialchars($p['category']); ?>"
+                     data-stock="<?php echo $p['stock']; ?>"
+                     data-brand="<?php
+                          $title_lower = strtolower($p['name']);
+                          if (strpos($title_lower, 'macbook') !== false || strpos($title_lower, 'iphone') !== false || strpos($title_lower, 'airpod') !== false) echo 'apple';
+                          elseif (strpos($title_lower, 'samsung') !== false || strpos($title_lower, 'galaxy') !== false || strpos($title_lower, 'buds') !== false) echo 'samsung';
+                          elseif (strpos($title_lower, 'dell') !== false) echo 'dell';
+                          elseif (strpos($title_lower, 'asus') !== false || strpos($title_lower, 'rog') !== false) echo 'asus';
+                          elseif (strpos($title_lower, 'sony') !== false) echo 'sony';
+                          elseif (strpos($title_lower, 'xiaomi') !== false) echo 'xiaomi';
+                          else echo 'other';
+                      ?>">
                     <div class="img-square-box">
-                        <img src="./images/macbook-pro-14-inch-m4-pro-24gb-1tb-20gpu-bac-1-639104240462766154-750x500.jpg" alt="Macbook Pro M4">
+                        <img src="./images/<?php echo htmlspecialchars($p['img']); ?>" alt="<?php echo htmlspecialchars($p['name']); ?>">
                     </div>
                     <div class="card-square-body">
-                        <h3>Macbook Pro M4</h3>
-                        <p class="product-price">59.990.000đ</p>
+                        <h3><?php echo htmlspecialchars($p['name']); ?></h3>
+                        <p class="product-price mb-1"><?php echo number_format($p['price'], 0, '', '.'); ?>đ</p>
+                        <p class="product-stock small text-secondary m-0 mb-2" style="font-size: 11px;">
+                            <?php if ($p['stock'] > 0) { ?>
+                                Còn lại: <strong class="text-success"><?php echo $p['stock']; ?></strong> sản phẩm
+                            <?php } else { ?>
+                                <strong class="text-danger"><i class="fas fa-exclamation-triangle"></i> Hết hàng</strong>
+                            <?php } ?>
+                        </p>
                         <div class="mini-chips">
-                            <span class="m-chip">RAM 16G</span>
-                            <span class="m-chip">SSD 512G</span>
+                            <?php 
+                            if (!empty($p['specs'])) {
+                                $specs = explode(",", $p['specs']);
+                                for($j = 0; $j < min(2, count($specs)); $j++) {
+                                    echo '<span class="m-chip">' . trim(htmlspecialchars($specs[$j])) . '</span>';
+                                }
+                            }
+                            ?>
                         </div>
-                        <div class="square-rating">
+                        <div class="square-rating mt-2">
                             <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
                         </div>
                     </div>
                     <div class="square-action">
-                        <button class="btn-square-buy">Thêm vào giỏ</button>
+                        <?php if ($p['stock'] > 0) { ?>
+                            <button class="btn-square-buy">Thêm vào giỏ</button>
+                        <?php } else { ?>
+                            <button class="btn-square-buy disabled" disabled style="background: rgba(255,255,255,0.05); color: #555; border: 1px solid rgba(255,255,255,0.05); cursor: not-allowed;">Hết hàng</button>
+                        <?php } ?>
                     </div>
                 </div>
             </div>
-
-            <!-- Product 2 -->
-            <div class="col product-col" data-category="phone">
-                <div class="card product-square-card"
-                     data-title="iPhone 16 Pro Max" 
-                     data-price="35.990.000đ" 
-                     data-img="./images/ip16pm.webp" 
-                     data-specs="Chip A18 Pro, Camera 48MP Zoom 5x, Titanium Thiết kế, Apple Intelligence" 
-                     data-category="phone">
-                    <div class="img-square-box">
-                        <img src="./images/ip16pm.webp" alt="iPhone 16 Pro Max">
-                    </div>
-                    <div class="card-square-body">
-                        <h3>iPhone 16 Pro Max</h3>
-                        <p class="product-price">35.990.000đ</p>
-                        <div class="mini-chips">
-                            <span class="m-chip">48MP</span>
-                            <span class="m-chip">A18 Pro</span>
-                        </div>
-                        <div class="square-rating">
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
-                        </div>
-                    </div>
-                    <div class="square-action">
-                        <button class="btn-square-buy">Thêm vào giỏ</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Product 3 -->
-            <div class="col product-col" data-category="phone">
-                <div class="card product-square-card"
-                     data-title="Galaxy S24 Ultra" 
-                     data-price="31.990.000đ" 
-                     data-img="./images/Galaxy s24ultra.webp" 
-                     data-specs="Chip Snapdragon 8 Gen 3, Camera 200MP, Bút S-Pen, Galaxy AI dịch thuật" 
-                     data-category="phone">
-                    <div class="img-square-box">
-                        <img src="./images/Galaxy s24ultra.webp" alt="Galaxy S24 Ultra">
-                    </div>
-                    <div class="card-square-body">
-                        <h3>Galaxy S24 Ultra</h3>
-                        <p class="product-price">31.990.000đ</p>
-                        <div class="mini-chips">
-                            <span class="m-chip">200MP</span>
-                            <span class="m-chip">Snap 8G3</span>
-                        </div>
-                        <div class="square-rating">
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                        </div>
-                    </div>
-                    <div class="square-action">
-                        <button class="btn-square-buy">Thêm vào giỏ</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Product 4 -->
-            <div class="col product-col" data-category="laptop">
-                <div class="card product-square-card"
-                     data-title="Dell XPS 15" 
-                     data-price="49.990.000đ" 
-                     data-img="./images/DELL.webp" 
-                     data-specs="Core i7 Thế hệ 13, RAM 32GB, SSD 1TB, Màn hình OLED Cảm ứng" 
-                     data-category="laptop">
-                    <div class="img-square-box">
-                        <img src="./images/DELL.webp" alt="Dell XPS 15">
-                    </div>
-                    <div class="card-square-body">
-                        <h3>Dell XPS 15</h3>
-                        <p class="product-price">49.990.000đ</p>
-                        <div class="mini-chips">
-                            <span class="m-chip">RAM 32G</span>
-                            <span class="m-chip">OLED Touch</span>
-                        </div>
-                        <div class="square-rating">
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                        </div>
-                    </div>
-                    <div class="square-action">
-                        <button class="btn-square-buy">Thêm vào giỏ</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Product 5 -->
-            <div class="col product-col" data-category="accessory">
-                <div class="card product-square-card"
-                     data-title="AirPods Pro Max" 
-                     data-price="12.990.000đ" 
-                     data-img="./images/AIRPOD.webp" 
-                     data-specs="Chống ồn ANC vượt trội, Âm thanh vòm Spatial, Pin dùng 20 giờ" 
-                     data-category="accessory">
-                    <div class="img-square-box">
-                        <img src="./images/AIRPOD.webp" alt="AirPods Pro Max">
-                    </div>
-                    <div class="card-square-body">
-                        <h3>AirPods Pro Max</h3>
-                        <p class="product-price">12.990.000đ</p>
-                        <div class="mini-chips">
-                            <span class="m-chip">ANC Đỉnh</span>
-                            <span class="m-chip">Spatial</span>
-                        </div>
-                        <div class="square-rating">
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
-                        </div>
-                    </div>
-                    <div class="square-action">
-                        <button class="btn-square-buy">Thêm vào giỏ</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Product 6 -->
-            <div class="col product-col" data-category="accessory">
-                <div class="card product-square-card"
-                     data-title="Galaxy Buds 3" 
-                     data-price="5.990.000đ" 
-                     data-img="./images/Galaxy bud3.webp" 
-                     data-specs="Thiết kế hạt đậu thời trang, Chống nước IPX7, Âm bass sâu ấm áp" 
-                     data-category="accessory">
-                    <div class="img-square-box">
-                        <img src="./images/Galaxy bud3.webp" alt="Galaxy Buds 3">
-                    </div>
-                    <div class="card-square-body">
-                        <h3>Galaxy Buds 3</h3>
-                        <p class="product-price">5.990.000đ</p>
-                        <div class="mini-chips">
-                            <span class="m-chip">Bass Ấm</span>
-                            <span class="m-chip">IPX7</span>
-                        </div>
-                        <div class="square-rating">
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                        </div>
-                    </div>
-                    <div class="square-action">
-                        <button class="btn-square-buy">Thêm vào giỏ</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Product 7 -->
-            <div class="col product-col" data-category="phone">
-                <div class="card product-square-card"
-                     data-title="iPhone 16 Standard" 
-                     data-price="22.990.000đ" 
-                     data-img="./images/ip16standard.webp" 
-                     data-specs="Chip A18 Bionic, Bộ nhớ 128GB, Camera góc siêu rộng, Nút Camera Control" 
-                     data-category="phone">
-                    <div class="img-square-box">
-                        <img src="./images/ip16standard.webp" alt="iPhone 16">
-                    </div>
-                    <div class="card-square-body">
-                        <h3>iPhone 16 Standard</h3>
-                        <p class="product-price">22.990.000đ</p>
-                        <div class="mini-chips">
-                            <span class="m-chip">128GB</span>
-                            <span class="m-chip">A18 Bionic</span>
-                        </div>
-                        <div class="square-rating">
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                        </div>
-                    </div>
-                    <div class="square-action">
-                        <button class="btn-square-buy">Thêm vào giỏ</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Product 8 -->
-            <div class="col product-col" data-category="laptop">
-                <div class="card product-square-card"
-                     data-title="ASUS ROG Strix G16" 
-                     data-price="38.490.000đ" 
-                     data-img="./images/ASUS ROG.webp" 
-                     data-specs="Card đồ họa RTX 4060, Chip Intel i7-13650HX, Màn hình 165Hz chuyên game" 
-                     data-category="laptop">
-                    <div class="img-square-box">
-                        <img src="./images/ASUS ROG.webp" alt="ASUS ROG Strix">
-                    </div>
-                    <div class="card-square-body">
-                        <h3>ASUS ROG Strix G16</h3>
-                        <p class="product-price">38.490.000đ</p>
-                        <div class="mini-chips">
-                            <span class="m-chip">RTX 4060</span>
-                            <span class="m-chip">i7-13650HX</span>
-                        </div>
-                        <div class="square-rating">
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                        </div>
-                    </div>
-                    <div class="square-action">
-                        <button class="btn-square-buy">Thêm vào giỏ</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Product 9 -->
-            <div class="col product-col" data-category="phone">
-                <div class="card product-square-card"
-                     data-title="Xiaomi 14 Ultra Leica" 
-                     data-price="26.990.000đ" 
-                     data-img="./images/XIAOMI.webp" 
-                     data-specs="Ống kính chuyên nghiệp Leica, Snapdragon 8 Gen 3, Sạc siêu tốc 90W" 
-                     data-category="phone">
-                    <div class="img-square-box">
-                        <img src="./images/XIAOMI.webp" alt="Xiaomi 14 Ultra">
-                    </div>
-                    <div class="card-square-body">
-                        <h3>Xiaomi 14 Ultra Leica</h3>
-                        <p class="product-price">26.990.000đ</p>
-                        <div class="mini-chips">
-                            <span class="m-chip">Leica Cam</span>
-                            <span class="m-chip">Snap 8G3</span>
-                        </div>
-                        <div class="square-rating">
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                        </div>
-                    </div>
-                    <div class="square-action">
-                        <button class="btn-square-buy">Thêm vào giỏ</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Product 10 -->
-            <div class="col product-col" data-category="accessory">
-                <div class="card product-square-card"
-                     data-title="Sony WH-1000XM5" 
-                     data-price="6.850.000đ" 
-                     data-img="./images/sony.webp" 
-                     data-specs="Bộ xử lý chống ồn kép V1, Pin bền bỉ 30 giờ, Cuộc gọi siêu nét" 
-                     data-category="accessory">
-                    <div class="img-square-box">
-                        <img src="./images/sony.webp" alt="Sony WH-1000XM5">
-                    </div>
-                    <div class="card-square-body">
-                        <h3>Sony WH-1000XM5</h3>
-                        <p class="product-price">6.850.000đ</p>
-                        <div class="mini-chips">
-                            <span class="m-chip">ANC Best</span>
-                            <span class="m-chip">30H Pin</span>
-                        </div>
-                        <div class="square-rating">
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                        </div>
-                    </div>
-                    <div class="square-action">
-                        <button class="btn-square-buy">Thêm vào giỏ</button>
-                    </div>
-                </div>
-            </div>
-
+            <?php } ?>
         </div>
-
+        
         <div class="pagination-container d-flex justify-content-center mt-5 w-100">
             <nav aria-label="Page navigation">
-                <ul class="pagination custom-pagination d-flex justify-content-center align-items-center gap-2 m-0 p-0">
-                    <li class="page-item disabled" id="prev-page-btn">
-                        <a class="page-link" href="javascript:void(0)" onclick="changePage(-1)"><i class="fas fa-chevron-left"></i></a>
-                    </li>
-                    <li class="page-item active" id="page-1-btn">
-                        <a class="page-link" href="javascript:void(0)" onclick="goToPage(1)">1</a>
-                    </li>
-                    <li class="page-item" id="page-2-btn">
-                        <a class="page-link" href="javascript:void(0)" onclick="goToPage(2)">2</a>
-                    </li>
-                    <li class="page-item" id="next-page-btn">
-                        <a class="page-link" href="javascript:void(0)" onclick="changePage(1)"><i class="fas fa-chevron-right"></i></a>
-                    </li>
+                <ul class="pagination custom-pagination d-flex justify-content-center align-items-center gap-2 m-0 p-0" id="featured-pagination">
+                    <!-- Loaded dynamically via JS -->
                 </ul>
             </nav>
         </div>
-
     </div>
 </section>
 
@@ -559,8 +322,8 @@ let currentPage = 1;
 const productsPerPage = 8; // Quy định cứng: hiển thị tối đa 8 sản phẩm trên 1 trang
 
 function renderPagination() {
-    const activeTab = document.querySelector('.tab-btn.active');
-    const activeCategory = activeTab.getAttribute('onclick').match(/'([^']+)'/)[1];
+    const activeChip = document.querySelector('#page-category-chips .filter-chip.active');
+    const activeCategory = activeChip ? activeChip.getAttribute('data-value') : 'all';
     const allCols = Array.from(document.querySelectorAll('.product-col'));
     
     const filteredCols = allCols.filter(col => {
@@ -572,6 +335,11 @@ function renderPagination() {
     const totalPages = Math.ceil(totalProducts / productsPerPage);
 
     const paginationWrapper = document.querySelector('.pagination-container');
+    const paginationUl = document.getElementById('featured-pagination');
+    if (!paginationUl) return;
+
+    paginationUl.innerHTML = "";
+
     if (totalPages <= 1) {
         paginationWrapper.style.setProperty('display', 'none', 'important');
     } else {
@@ -580,6 +348,10 @@ function renderPagination() {
 
     allCols.forEach(col => col.style.setProperty('display', 'none', 'important'));
     
+    // Ensure currentPage is within bounds
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+
     filteredCols.forEach((col, index) => {
         const startIndex = (currentPage - 1) * productsPerPage;
         const endIndex = startIndex + productsPerPage;
@@ -589,23 +361,26 @@ function renderPagination() {
         }
     });
 
-    const p1Btn = document.getElementById('page-1-btn');
-    const p2Btn = document.getElementById('page-2-btn');
-    const prevBtn = document.getElementById('prev-page-btn');
-    const nextBtn = document.getElementById('next-page-btn');
-    
-    if (p1Btn && p2Btn && prevBtn && nextBtn) {
-        if (currentPage === 1) {
-            p1Btn.classList.add('active');
-            p2Btn.classList.remove('active');
-            prevBtn.classList.add('disabled');
-            if (totalPages > 1) nextBtn.classList.remove('disabled');
-        } else {
-            p1Btn.classList.remove('active');
-            p2Btn.classList.add('active');
-            prevBtn.classList.remove('disabled');
-            nextBtn.classList.add('disabled');
+    if (totalPages > 1) {
+        // Nút "Trước"
+        const prevLi = document.createElement("li");
+        prevLi.className = "page-item" + (currentPage === 1 ? " disabled" : "");
+        prevLi.innerHTML = `<a class="page-link" href="javascript:void(0)" onclick="changePage(-1)"><i class="fas fa-chevron-left"></i></a>`;
+        paginationUl.appendChild(prevLi);
+
+        // Các nút số trang
+        for (let page = 1; page <= totalPages; page++) {
+            const li = document.createElement("li");
+            li.className = "page-item" + (page === currentPage ? " active" : "");
+            li.innerHTML = `<a class="page-link" href="javascript:void(0)" onclick="goToPage(${page})">${page}</a>`;
+            paginationUl.appendChild(li);
         }
+
+        // Nút "Sau"
+        const nextLi = document.createElement("li");
+        nextLi.className = "page-item" + (currentPage === totalPages ? " disabled" : "");
+        nextLi.innerHTML = `<a class="page-link" href="javascript:void(0)" onclick="changePage(1)"><i class="fas fa-chevron-right"></i></a>`;
+        paginationUl.appendChild(nextLi);
     }
 }
 
@@ -616,9 +391,18 @@ function goToPage(page) {
 }
 
 function changePage(direction) {
+    const activeChip = document.querySelector('#page-category-chips .filter-chip.active');
+    const activeCategory = activeChip ? activeChip.getAttribute('data-value') : 'all';
+    const allCols = Array.from(document.querySelectorAll('.product-col'));
+    const filteredCols = allCols.filter(col => {
+        const cat = col.getAttribute('data-category');
+        return activeCategory === 'all' || cat === activeCategory;
+    });
+    const totalPages = Math.ceil(filteredCols.length / productsPerPage);
+
     currentPage += direction;
     if (currentPage < 1) currentPage = 1;
-    if (currentPage > 2) currentPage = 2;
+    if (currentPage > totalPages) currentPage = totalPages;
     goToPage(currentPage);
 }
 
@@ -626,10 +410,6 @@ document.addEventListener("DOMContentLoaded", function() {
     renderPagination();
     
     window.filterProducts = function(category, button) {
-        const buttons = document.querySelectorAll('.tab-btn');
-        buttons.forEach(btn => btn.classList.remove('active'));
-        button.classList.add('active');
-        
         currentPage = 1; 
         if (typeof applyAdvancedFilters === "function") {
             applyAdvancedFilters();

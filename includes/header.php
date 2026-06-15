@@ -1,4 +1,5 @@
 <?php 
+session_start();
 // Calculate the relative path prefix dynamically
 $project_root = realpath(dirname(dirname(__FILE__)));
 $script_dir = realpath(dirname($_SERVER['SCRIPT_FILENAME']));
@@ -70,13 +71,155 @@ $path_prefix = $relative_path;
 
         <!-- Luxury Header Actions -->
         <div class="header-actions">
-            <a href="<?php echo $path_prefix; ?>Account/login.php" class="action-link" title="Đăng nhập">
-                <i class="far fa-user"></i>
-            </a>
+            <div id="user-header-status" class="d-inline-block">
+                <a href="<?php echo $path_prefix; ?>Account/login.php" class="action-link" title="Đăng nhập">
+                    <i class="far fa-user"></i>
+                </a>
+            </div>
             <a href="javascript:void(0)" class="action-link position-relative" id="cart-trigger" title="Giỏ hàng">
                 <i class="fas fa-shopping-bag"></i>
                 <span class="cart-badge">0</span>
             </a>
         </div>
     </div>
-</header>
+</header>
+
+<style>
+.user-dropdown {
+    position: relative;
+    display: inline-block;
+}
+.user-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+.user-trigger:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+.user-dropdown-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 12px);
+    background: #0f131c;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 10px;
+    min-width: 200px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.user-dropdown:hover .user-dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+.user-dropdown-info {
+    padding: 8px 12px;
+}
+.user-dropdown-info h6 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-white);
+    margin: 0;
+}
+.user-dropdown-info span {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+.user-dropdown-menu a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    color: var(--text-secondary) !important;
+    text-decoration: none;
+    font-size: 13px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+.user-dropdown-menu a:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--accent-gold) !important;
+}
+.user-dropdown-menu a.logout-btn:hover {
+    background: rgba(255, 71, 87, 0.08);
+    color: #ff4757 !important;
+}
+.dropdown-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.06);
+    margin: 6px 0;
+}
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const userStatusContainer = document.getElementById("user-header-status");
+    const prefix = "<?php echo $path_prefix; ?>";
+    
+    // Đồng bộ session PHP với localStorage
+    const phpUser = <?php echo isset($_SESSION['user']) ? json_encode($_SESSION['user']) : 'null'; ?>;
+    if (phpUser) {
+        localStorage.setItem("logged_in_user", JSON.stringify(phpUser));
+    } else {
+        localStorage.removeItem("logged_in_user");
+    }
+    
+    const loggedInUser = phpUser;
+    
+    if (loggedInUser && userStatusContainer) {
+        let adminLink = "";
+        if (loggedInUser.role === "admin") {
+            adminLink = `
+                <a href="${prefix}admin/index.php">
+                    <i class="fas fa-chart-line"></i> Trang quản trị
+                </a>
+                <div class="dropdown-divider"></div>
+            `;
+        }
+        
+        userStatusContainer.innerHTML = `
+            <div class="user-dropdown">
+                <div class="user-trigger">
+                    <span class="welcome-text d-none d-md-inline" style="font-size: 12px; color: var(--text-secondary); font-weight: 500;">
+                        Xin chào, <strong style="color: var(--accent-gold); font-weight: 700;">${loggedInUser.fullname}</strong>
+                    </span>
+                    <i class="fas fa-user-circle" style="font-size: 20px; color: var(--accent-gold);"></i>
+                </div>
+                <div class="user-dropdown-menu">
+                    <div class="user-dropdown-info">
+                        <h6>${loggedInUser.fullname}</h6>
+                        <span>${loggedInUser.role === 'admin' ? 'Quyền quản trị' : 'Thành viên VIP'}</span>
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    ${adminLink}
+                    <a href="${prefix}page/order_history.php">
+                        <i class="fas fa-history"></i> Lịch sử đơn hàng
+                    </a>
+                    <a href="javascript:void(0)" class="logout-btn" id="header-logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                    </a>
+                </div>
+            </div>
+        `;
+        
+        // Bắt sự kiện đăng xuất
+        const logoutBtn = document.getElementById("header-logout-btn");
+        if (logoutBtn) {
+            logoutBtn.addEventListener("click", function() {
+                localStorage.removeItem("logged_in_user");
+                alert("Bạn đã đăng xuất!");
+                window.location.href = prefix + "Account/logout.php";
+            });
+        }
+    }
+});
+</script>

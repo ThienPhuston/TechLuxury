@@ -23,10 +23,10 @@
   max-width: 265px !important;
   margin: 0 auto !important;
   transition:
-    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important,
-    border-color 0.25s ease !important,
+    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.25s ease,
     box-shadow 0.25s ease !important;
-    cursor: pointer !important;
+  cursor: pointer !important;
 }
 
 .product-square-card:hover {
