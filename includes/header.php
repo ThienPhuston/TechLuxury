@@ -52,85 +52,10 @@ $path_prefix = $relative_path;
         </a>
 
         <!-- Dynamic Live Search Bar -->
-        <div class="search-container position-relative" id="header-search-container">
+        <div class="search-container">
             <div class="search-box">
-                <i class="fas fa-search search-icon"></i>
-                <input type="text" id="header-search-input" placeholder="Tìm kiếm sản phẩm công nghệ..." autocomplete="off">
-                <button type="button" class="filter-toggle-btn" id="header-filter-toggle" title="Bộ lọc nâng cao">
-                    <i class="fas fa-sliders-h"></i>
-                </button>
-            </div>
-            
-            <!-- Beautiful Dropdown Advanced Search Panel -->
-            <div class="search-advanced-dropdown" id="header-search-dropdown">
-                <div class="dropdown-arrow"></div>
-                <div class="dropdown-header d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="m-0"><i class="fas fa-filter text-gold"></i> TÌM KIẾM NÂNG CAO</h5>
-                    <button type="button" class="btn-clear-filters text-secondary" id="header-clear-btn">
-                        <i class="fas fa-undo"></i> Đặt lại
-                    </button>
-                </div>
-                
-                <div class="dropdown-body">
-                    <!-- Category Selection -->
-                    <div class="filter-group mb-3">
-                        <label class="filter-label">Danh mục sản phẩm</label>
-                        <div class="filter-chips" id="header-category-chips">
-                            <span class="filter-chip active" data-value="all">Tất cả</span>
-                            <span class="filter-chip" data-value="laptop">Laptop</span>
-                            <span class="filter-chip" data-value="phone">Điện thoại</span>
-                            <span class="filter-chip" data-value="accessory">Phụ kiện</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Brand Selection -->
-                    <div class="filter-group mb-3">
-                        <label class="filter-label">Thương hiệu</label>
-                        <div class="filter-chips" id="header-brand-chips">
-                            <span class="filter-chip active" data-value="all">Tất cả</span>
-                            <span class="filter-chip" data-value="apple">Apple</span>
-                            <span class="filter-chip" data-value="samsung">Samsung</span>
-                            <span class="filter-chip" data-value="dell">Dell</span>
-                            <span class="filter-chip" data-value="asus">Asus</span>
-                            <span class="filter-chip" data-value="sony">Sony</span>
-                            <span class="filter-chip" data-value="xiaomi">Xiaomi</span>
-                        </div>
-                    </div>
-                    
-                    <div class="row g-2">
-                        <!-- Price Range Select -->
-                        <div class="col-6 mb-3">
-                            <div class="filter-group">
-                                <label class="filter-label" for="header-price-range">Khoảng giá</label>
-                                <select id="header-price-range" class="filter-select">
-                                    <option value="all">Tất cả các giá</option>
-                                    <option value="under10">Dưới 10 triệu</option>
-                                    <option value="10to25">Từ 10tr - 25 triệu</option>
-                                    <option value="25to45">Từ 25tr - 45 triệu</option>
-                                    <option value="above45">Trên 45 triệu</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <!-- Price Sort Select -->
-                        <div class="col-6 mb-3">
-                            <div class="filter-group">
-                                <label class="filter-label" for="header-price-sort">Sắp xếp giá</label>
-                                <select id="header-price-sort" class="filter-select">
-                                    <option value="none">Mặc định</option>
-                                    <option value="asc">Từ thấp đến cao</option>
-                                    <option value="desc">Từ cao đến thấp</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="dropdown-footer">
-                    <button type="button" class="btn-search-go w-100" id="header-search-submit-btn">
-                        <i class="fas fa-search"></i> ÁP DỤNG BỘ LỌC
-                    </button>
-                </div>
+                <i class="fas fa-search"></i>
+                <input type="text" id="header-search-input" placeholder="Tìm kiếm sản phẩm công nghệ...">
             </div>
         </div>
 

@@ -346,20 +346,13 @@ document.addEventListener("DOMContentLoaded", function () {
     // 5. BỘ LỌC TÌM KIẾM NÂNG CAO (Advanced Filters) & LIVE SEARCH
     // ----------------------------------------------------------------
     const searchInput = document.getElementById("header-search-input");
-    const headerSearchContainer = document.getElementById("header-search-container");
-    const headerFilterToggle = document.getElementById("header-filter-toggle");
-    const headerSearchDropdown = document.getElementById("header-search-dropdown");
-    const headerClearBtn = document.getElementById("header-clear-btn");
-    const headerSearchSubmitBtn = document.getElementById("header-search-submit-btn");
+    const pageClearBtn = document.getElementById("page-clear-btn");
 
     const filterSearchText = document.getElementById("filter-search-text");
     const filterCategory = document.getElementById("filter-category");
     const filterBrand = document.getElementById("filter-brand");
     const filterPriceRange = document.getElementById("filter-price-range");
     const filterPriceSort = document.getElementById("filter-price-sort");
-
-    const headerPriceRange = document.getElementById("header-price-range");
-    const headerPriceSort = document.getElementById("header-price-sort");
 
     // Global filter state object
     const filterState = {
@@ -369,8 +362,6 @@ document.addEventListener("DOMContentLoaded", function () {
         priceRange: "all",
         priceSort: "none"
     };
-
-
 
     // Helper to check if search page or home page grid is active on the current DOM
     function isProductContainerPresent() {
@@ -404,8 +395,8 @@ document.addEventListener("DOMContentLoaded", function () {
         if (filterSearchText) filterSearchText.value = filterState.query;
 
         // 2. Category selection
-        // In header dropdown chips
-        const catChips = document.querySelectorAll("#header-category-chips .filter-chip");
+        // In page category chips
+        const catChips = document.querySelectorAll("#page-category-chips .filter-chip");
         catChips.forEach(c => {
             if (c.getAttribute("data-value") === filterState.category) {
                 c.classList.add("active");
@@ -413,22 +404,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 c.classList.remove("active");
             }
         });
-        // In home page category tabs
-        const tabBtns = document.querySelectorAll(".tab-btn");
-        tabBtns.forEach(btn => {
-            const onclickAttr = btn.getAttribute("onclick") || "";
-            if (onclickAttr.includes(`'${filterState.category}'`)) {
-                btn.classList.add("active");
-            } else {
-                btn.classList.remove("active");
-            }
-        });
-        // In page category select dropdown
+        // In page category select dropdown (fallback)
         if (filterCategory) filterCategory.value = filterState.category;
 
         // 3. Brand selection
-        // In header dropdown chips
-        const brandChips = document.querySelectorAll("#header-brand-chips .filter-chip");
+        // In page brand chips
+        const brandChips = document.querySelectorAll("#page-brand-chips .filter-chip");
         brandChips.forEach(c => {
             if (c.getAttribute("data-value") === filterState.brand) {
                 c.classList.add("active");
@@ -436,39 +417,17 @@ document.addEventListener("DOMContentLoaded", function () {
                 c.classList.remove("active");
             }
         });
-        // In page brand select dropdown
+        // In page brand select dropdown (fallback)
         if (filterBrand) filterBrand.value = filterState.brand;
 
         // 4. Price range
-        if (headerPriceRange) headerPriceRange.value = filterState.priceRange;
         if (filterPriceRange) filterPriceRange.value = filterState.priceRange;
 
         // 5. Price Sort
-        if (headerPriceSort) headerPriceSort.value = filterState.priceSort;
         if (filterPriceSort) filterPriceSort.value = filterState.priceSort;
     }
 
-    // Toggle advanced filter dropdown panel
-    if (headerFilterToggle && headerSearchDropdown) {
-        headerFilterToggle.addEventListener("click", function (e) {
-            e.stopPropagation();
-            headerFilterToggle.classList.toggle("active");
-            headerSearchDropdown.classList.toggle("show");
-        });
-
-        document.addEventListener("click", function (e) {
-            if (headerSearchContainer && !headerSearchContainer.contains(e.target)) {
-                headerFilterToggle.classList.remove("active");
-                headerSearchDropdown.classList.remove("show");
-            }
-        });
-
-        headerSearchDropdown.addEventListener("click", function (e) {
-            e.stopPropagation();
-        });
-    }
-
-    // Initialize chips behavior in the dropdown panel
+    // Initialize chips behavior on the page
     function setupChips(containerId, stateKey) {
         const container = document.getElementById(containerId);
         if (!container) return;
@@ -486,12 +445,12 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    setupChips("header-category-chips", "category");
-    setupChips("header-brand-chips", "brand");
+    setupChips("page-category-chips", "category");
+    setupChips("page-brand-chips", "brand");
 
     // Clear filters logic
-    if (headerClearBtn) {
-        headerClearBtn.addEventListener("click", function () {
+    if (pageClearBtn) {
+        pageClearBtn.addEventListener("click", function () {
             filterState.query = "";
             filterState.category = "all";
             filterState.brand = "all";
@@ -507,10 +466,6 @@ document.addEventListener("DOMContentLoaded", function () {
     // Form submit redirection logic (for pages other than catalog)
     function handleGlobalSearchSubmit() {
         if (isProductContainerPresent()) {
-            if (headerFilterToggle && headerSearchDropdown) {
-                headerFilterToggle.classList.remove("active");
-                headerSearchDropdown.classList.remove("show");
-            }
             applyAdvancedFilters();
         } else {
             const isSub = checkIsSubpage();
@@ -524,10 +479,6 @@ document.addEventListener("DOMContentLoaded", function () {
             });
             window.location.href = prefix + "product.php?" + urlParams.toString();
         }
-    }
-
-    if (headerSearchSubmitBtn) {
-        headerSearchSubmitBtn.addEventListener("click", handleGlobalSearchSubmit);
     }
 
     if (searchInput) {
@@ -647,28 +598,9 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // Sync input events for in-page controls
     if (searchInput) {
         searchInput.addEventListener("input", function() {
             filterState.query = this.value;
-            syncFilterStateToInPage();
-            if (isProductContainerPresent()) {
-                applyAdvancedFilters();
-            }
-        });
-    }
-    if (headerPriceRange) {
-        headerPriceRange.addEventListener("change", function() {
-            filterState.priceRange = this.value;
-            syncFilterStateToInPage();
-            if (isProductContainerPresent()) {
-                applyAdvancedFilters();
-            }
-        });
-    }
-    if (headerPriceSort) {
-        headerPriceSort.addEventListener("change", function() {
-            filterState.priceSort = this.value;
             syncFilterStateToInPage();
             if (isProductContainerPresent()) {
                 applyAdvancedFilters();
@@ -712,6 +644,22 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    // Advanced collapsible filter panel toggle interaction
+    const btnToggleAdvanced = document.getElementById("btn-toggle-advanced");
+    const advancedFilterCollapse = document.getElementById("advanced-filter-collapse");
+    const filterPanel = document.querySelector(".advanced-filter-panel");
+
+    if (btnToggleAdvanced && advancedFilterCollapse) {
+        btnToggleAdvanced.addEventListener("click", function() {
+            const isExpanded = advancedFilterCollapse.classList.toggle("show");
+            btnToggleAdvanced.classList.toggle("active");
+            if (filterPanel) {
+                filterPanel.classList.toggle("expanded");
+            }
+            btnToggleAdvanced.setAttribute("title", isExpanded ? "Thu nhỏ bộ lọc nâng cao" : "Mở bộ lọc nâng cao");
+        });
+    }
+
     // Expose applyAdvancedFilters to global window
     window.applyAdvancedFilters = applyAdvancedFilters;
 
@@ -745,6 +693,18 @@ document.addEventListener("DOMContentLoaded", function () {
             syncFilterStateToInPage();
             if (isProductContainerPresent()) {
                 applyAdvancedFilters();
+            }
+            // Auto-expand advanced filter panel if any advanced filters are active on load
+            const hasAdvancedFilters = filterState.category !== "all" || 
+                                       filterState.brand !== "all" || 
+                                       filterState.priceRange !== "all" || 
+                                       filterState.priceSort !== "none";
+            if (hasAdvancedFilters && advancedFilterCollapse && btnToggleAdvanced) {
+                advancedFilterCollapse.classList.add("show");
+                btnToggleAdvanced.classList.add("active");
+                if (filterPanel) {
+                    filterPanel.classList.add("expanded");
+                }
             }
         }
     }
