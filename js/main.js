@@ -18,30 +18,35 @@ document.addEventListener("DOMContentLoaded", function () {
         updateCartUI();
     }
 
-    function addToCart(title, price, img, stock = 9999) {
+    function addToCart(title, price, img, stock = 9999, qtyToAdd = 1) {
         // Đưa giá về dạng số nguyên để tính toán
         let numPrice = parseInt(price.toString().replace(/[^0-9]/g, ""));
+        qtyToAdd = parseInt(qtyToAdd) || 1;
         
         // Chuẩn hóa đường dẫn ảnh: loại bỏ các tiền tố ./ hoặc ../ để lưu dạng tương đối sạch
         let normalizedImg = img.replace(/^(\.\.\/|\.\/)/, "");
         
         let existingItem = cart.find(item => item.title === title);
         if (existingItem) {
-            if (existingItem.quantity + 1 > stock) {
-                alert(`Không thể thêm sản phẩm "${title}". Kho chỉ còn lại ${stock} sản phẩm!`);
+            if (existingItem.quantity + qtyToAdd > stock) {
+                alert(`Không thể thêm sản phẩm "${title}". Kho chỉ còn lại ${stock} sản phẩm (bạn đã có ${existingItem.quantity} trong giỏ)!`);
                 return;
             }
-            existingItem.quantity += 1;
+            existingItem.quantity += qtyToAdd;
         } else {
             if (stock <= 0) {
                 alert(`Sản phẩm "${title}" đã hết hàng!`);
+                return;
+            }
+            if (qtyToAdd > stock) {
+                alert(`Không thể thêm! Số lượng yêu cầu (${qtyToAdd}) vượt quá tồn kho hiện có (${stock})!`);
                 return;
             }
             cart.push({
                 title: title,
                 price: numPrice,
                 img: normalizedImg,
-                quantity: 1,
+                quantity: qtyToAdd,
                 stock: stock
             });
         }
@@ -274,6 +279,12 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         }
 
+        const modalQtyInput = document.getElementById("modal-product-qty");
+        if (modalQtyInput) {
+            modalQtyInput.value = 1;
+            modalQtyInput.max = parseInt(productData.stock || 0);
+        }
+
         // Hiện modal
         specsModal.classList.add("active");
         specsOverlay.classList.add("active");
@@ -296,7 +307,11 @@ document.addEventListener("DOMContentLoaded", function () {
     if (modalAddBtn) {
         modalAddBtn.addEventListener("click", function () {
             if (currentModalProduct) {
-                addToCart(currentModalProduct.title, currentModalProduct.price, currentModalProduct.img, parseInt(currentModalProduct.stock || 0));
+                const modalQtyInput = document.getElementById("modal-product-qty");
+                let qty = modalQtyInput ? parseInt(modalQtyInput.value) : 1;
+                if (isNaN(qty) || qty <= 0) qty = 1;
+
+                addToCart(currentModalProduct.title, currentModalProduct.price, currentModalProduct.img, parseInt(currentModalProduct.stock || 0), qty);
                 closeSpecsModal();
             }
         });
@@ -325,7 +340,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (e.target.closest("button") || e.target.closest(".fav") || e.target.closest("a") || e.target.classList.contains("btn-buy")) {
                     return; // không làm gì nếu click nút
                 }
-
+ 
                 // Lấy thông tin từ các thuộc tính data-*
                 let title = card.getAttribute("data-title");
                 let price = card.getAttribute("data-price");
@@ -333,7 +348,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 let specs = card.getAttribute("data-specs");
                 let category = card.getAttribute("data-category");
                 let stock = parseInt(card.getAttribute("data-stock") || 0);
-
+ 
                 // Nếu không có data-attribute trực tiếp trên card, thử tìm trong thẻ con
                 if (!title) {
                     const h3 = card.querySelector("h3");
@@ -347,7 +362,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     const imgEl = card.querySelector("img");
                     img = imgEl ? imgEl.getAttribute("src") : "";
                 }
-
+ 
                 openSpecsModal({
                     title: title,
                     price: price,
@@ -357,7 +372,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     stock: stock
                 });
             });
-
+ 
             // Gắn sự kiện mua hàng cho nút mua hàng trên card
             const buyBtn = card.querySelector(".btn-square-buy, .btn-buy, .btn-buy-modal");
             if (buyBtn) {
@@ -368,7 +383,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     let price = card.getAttribute("data-price");
                     let img = card.getAttribute("data-img");
                     let stock = parseInt(card.getAttribute("data-stock") || 0);
-
+ 
                     if (!title) {
                         const h3 = card.querySelector("h3");
                         title = h3 ? h3.textContent.trim() : "Sản phẩm công nghệ";
@@ -381,8 +396,8 @@ document.addEventListener("DOMContentLoaded", function () {
                         const imgEl = card.querySelector("img");
                         img = imgEl ? imgEl.getAttribute("src") : "";
                     }
-
-                    addToCart(title, price, img, stock);
+ 
+                    addToCart(title, price, img, stock, 1);
                 });
             }
         });

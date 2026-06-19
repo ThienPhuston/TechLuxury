@@ -54,6 +54,12 @@ if (!isset($_SESSION['user']) || $_SESSION['user']['username'] !== 'admin' || $_
             <li data-tab="products">
                 <a href="javascript:void(0)"><i class="fas fa-box"></i> <span>Sản phẩm</span></a>
             </li>
+            <li data-tab="categories">
+                <a href="javascript:void(0)"><i class="fas fa-tags"></i> <span>Danh mục</span></a>
+            </li>
+            <li data-tab="vouchers">
+                <a href="javascript:void(0)"><i class="fas fa-file-invoice"></i> <span>Phiếu nhập</span></a>
+            </li>
             <li data-tab="orders">
                 <a href="javascript:void(0)"><i class="fas fa-shopping-cart"></i> <span>Đơn hàng</span></a>
             </li>
@@ -169,6 +175,29 @@ if (!isset($_SESSION['user']) || $_SESSION['user']['username'] !== 'admin' || $_
                 </div>
             </div>
 
+            <!-- Low Stock Warning Box -->
+            <div id="low-stock-warning-box" class="admin-table-box mb-4" style="border: 1px solid rgba(255, 71, 87, 0.3); background: rgba(255, 71, 87, 0.02); display: none;">
+                <div class="d-flex align-items-center gap-2 mb-3 text-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3 class="m-0 text-danger" style="font-size: 16px; font-weight: 700;">CẢNH BÁO SẢN PHẨM SẮP HẾT HÀNG (SỐ LƯỢNG KHO <= 5)</h3>
+                </div>
+                <div class="table-responsive">
+                    <table class="custom-table table-sm" id="low-stock-table">
+                        <thead>
+                            <tr>
+                                <th>ẢNH</th>
+                                <th>TÊN SẢN PHẨM</th>
+                                <th>TỒN KHO HỒ SƠ</th>
+                                <th>TRẠNG THÁI</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Generated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- Recent Orders Box -->
             <div class="admin-table-box">
                 <h3 class="m-0 mb-4">DANH SÁCH ĐƠN HÀNG MỚI ĐẶT</h3>
@@ -196,22 +225,52 @@ if (!isset($_SESSION['user']) || $_SESSION['user']['username'] !== 'admin' || $_
         <!-- ---------------------------------------------------- -->
         <div id="tab-products" class="tab-pane-content" style="display: none;">
             <div class="admin-table-box">
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-3 mb-4">
-                    <h3 class="m-0">DANH SÁCH SẢN PHẨM</h3>
-                    
-                    <div class="d-flex flex-wrap gap-2">
-                        <input type="text" id="product-search-input" placeholder="Tìm kiếm sản phẩm..." class="form-control text-white" style="width: auto; min-width: 220px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); font-size: 12px; border-radius: 8px; padding: 8px 12px;">
+                <div class="d-flex flex-column gap-3 mb-4">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-3">
+                        <h3 class="m-0">DANH SÁCH SẢN PHẨM</h3>
                         
-                        <select id="product-category-filter" class="form-select text-white" style="width: auto; background: #0f131c; border: 1px solid var(--border-color); font-size: 12px; border-radius: 8px;">
-                            <option value="all">Tất cả danh mục</option>
-                            <option value="laptop">Laptop</option>
-                            <option value="phone">Điện thoại</option>
-                            <option value="accessory">Phụ kiện</option>
-                        </select>
+                        <div class="d-flex flex-wrap gap-2">
+                            <input type="text" id="product-search-input" placeholder="Tìm kiếm sản phẩm..." class="form-control text-white" style="width: auto; min-width: 200px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); font-size: 12px; border-radius: 8px; padding: 8px 12px;">
+                            
+                            <select id="product-category-filter" class="form-select text-white" style="width: auto; background: #0f131c; border: 1px solid var(--border-color); font-size: 12px; border-radius: 8px;">
+                                <option value="all">Tất cả danh mục</option>
+                            </select>
 
-                        <button class="btn btn-outline-warning d-flex align-items-center gap-2" id="btn-add-product-modal" style="font-size: 12px; font-weight: 700; border-radius: 8px; padding: 8px 16px;">
-                            <i class="fas fa-plus"></i> THÊM SẢN PHẨM
-                        </button>
+                            <select id="product-stock-filter" class="form-select text-white" style="width: auto; background: #0f131c; border: 1px solid var(--border-color); font-size: 12px; border-radius: 8px;">
+                                <option value="all">Tất cả hàng tồn</option>
+                                <option value="low">Sắp hết hàng (<=5)</option>
+                                <option value="out">Đã hết hàng (0)</option>
+                            </select>
+
+                            <button class="btn btn-outline-warning d-flex align-items-center gap-2" id="btn-add-product-modal" style="font-size: 12px; font-weight: 700; border-radius: 8px; padding: 8px 16px;">
+                                <i class="fas fa-plus"></i> THÊM SẢN PHẨM
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Advanced lookup fields for Price, Cost and Profit rate -->
+                    <div class="row g-2 p-3 rounded" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color);">
+                        <div class="col-md-4">
+                            <label class="text-secondary small fw-bold mb-1" style="font-size: 10px;">LỌC THEO GIÁ BÁN (VNĐ)</label>
+                            <div class="d-flex gap-2">
+                                <input type="number" id="product-price-min" placeholder="Từ" class="form-control text-white form-control-sm" style="background: rgba(255,255,255,0.03); border-color: var(--border-color); font-size: 11px; color: white;">
+                                <input type="number" id="product-price-max" placeholder="Đến" class="form-control text-white form-control-sm" style="background: rgba(255,255,255,0.03); border-color: var(--border-color); font-size: 11px; color: white;">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-secondary small fw-bold mb-1" style="font-size: 10px;">LỌC THEO GIÁ NHẬP / GIÁ VỐN (VNĐ)</label>
+                            <div class="d-flex gap-2">
+                                <input type="number" id="product-cost-min" placeholder="Từ" class="form-control text-white form-control-sm" style="background: rgba(255,255,255,0.03); border-color: var(--border-color); font-size: 11px; color: white;">
+                                <input type="number" id="product-cost-max" placeholder="Đến" class="form-control text-white form-control-sm" style="background: rgba(255,255,255,0.03); border-color: var(--border-color); font-size: 11px; color: white;">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-secondary small fw-bold mb-1" style="font-size: 10px;">LỌC THEO TỶ SUẤT LỢI NHUẬN (%)</label>
+                            <div class="d-flex gap-2">
+                                <input type="number" id="product-profit-min" placeholder="Từ" class="form-control text-white form-control-sm" style="background: rgba(255,255,255,0.03); border-color: var(--border-color); font-size: 11px; color: white;">
+                                <input type="number" id="product-profit-max" placeholder="Đến" class="form-control text-white form-control-sm" style="background: rgba(255,255,255,0.03); border-color: var(--border-color); font-size: 11px; color: white;">
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -224,6 +283,7 @@ if (!isset($_SESSION['user']) || $_SESSION['user']['username'] !== 'admin' || $_
                                 <th>GIÁ BÁN</th>
                                 <th>GIÁ NHẬP</th>
                                 <th>LÃI (TỶ SUẤT)</th>
+                                <th>NHẬP - XUẤT</th>
                                 <th>TỒN KHO</th>
                                 <th>DANH MỤC</th>
                                 <th>HÀNH ĐỘNG</th>
@@ -242,7 +302,42 @@ if (!isset($_SESSION['user']) || $_SESSION['user']['username'] !== 'admin' || $_
         <!-- ---------------------------------------------------- -->
         <div id="tab-orders" class="tab-pane-content" style="display: none;">
             <div class="admin-table-box">
-                <h3 class="m-0 mb-4">QUẢN LÝ ĐƠN HÀNG</h3>
+                <div class="d-flex flex-column gap-3 mb-4">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-3">
+                        <h3 class="m-0">QUẢN LÝ ĐƠN HÀNG</h3>
+                        
+                        <div class="d-flex flex-wrap gap-2 align-items-center">
+                            <input type="text" id="order-search-input" placeholder="Tìm mã đơn, tên khách..." class="form-control text-white" style="width: auto; min-width: 180px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); font-size: 12px; border-radius: 8px; padding: 6px 12px;">
+
+                            <select id="order-status-filter" class="form-select text-white" style="width: auto; background: #0f131c; border: 1px solid var(--border-color); font-size: 12px; border-radius: 8px;">
+                                <option value="all">Tất cả trạng thái</option>
+                                <option value="Chờ thanh toán">Chờ thanh toán</option>
+                                <option value="Đang xử lý">Đang xử lý</option>
+                                <option value="Đã thanh toán">Đã thanh toán</option>
+                                <option value="Đang giao hàng">Đang giao hàng</option>
+                                <option value="Hoàn thành">Hoàn thành</option>
+                                <option value="Đã hủy">Đã hủy</option>
+                            </select>
+
+                            <button class="btn btn-outline-warning d-flex align-items-center gap-2" id="btn-sort-order-address" style="font-size: 12px; font-weight: 700; border-radius: 8px; padding: 8px 16px;">
+                                <i class="fas fa-sort-alpha-down"></i> XẾP THEO ĐỊA CHỈ (A-Z)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Date range filters -->
+                    <div class="row g-2 p-3 rounded" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color);">
+                        <div class="col-md-6 d-flex align-items-center gap-2">
+                            <label class="text-secondary small fw-bold mb-0 text-nowrap" style="font-size: 11px; min-width: 60px;">TỪ NGÀY:</label>
+                            <input type="date" id="order-date-min" class="form-control text-white form-control-sm" style="background: rgba(255,255,255,0.03); border-color: var(--border-color); font-size: 11px; color: white;">
+                        </div>
+                        <div class="col-md-6 d-flex align-items-center gap-2">
+                            <label class="text-secondary small fw-bold mb-0 text-nowrap" style="font-size: 11px; min-width: 60px;">ĐẾN NGÀY:</label>
+                            <input type="date" id="order-date-max" class="form-control text-white form-control-sm" style="background: rgba(255,255,255,0.03); border-color: var(--border-color); font-size: 11px; color: white;">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="table-responsive">
                     <table class="custom-table" id="orders-table">
                         <thead>
@@ -332,6 +427,62 @@ if (!isset($_SESSION['user']) || $_SESSION['user']['username'] !== 'admin' || $_
                 </form>
             </div>
         </div>
+
+        <!-- TAB 6: DANH MỤC SẢN PHẨM -->
+        <div id="tab-categories" class="tab-pane-content" style="display: none;">
+            <div class="admin-table-box">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="m-0">QUẢN LÝ DANH MỤC</h3>
+                    <button class="btn btn-outline-warning btn-sm d-flex align-items-center gap-2" id="btn-add-category" style="font-weight: 700; border-radius: 8px; padding: 8px 16px;">
+                        <i class="fas fa-plus"></i> THÊM DANH MỤC
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="custom-table" id="categories-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>MÃ DANH MỤC</th>
+                                <th>TÊN HIỂN THỊ</th>
+                                <th>HÀNH ĐỘNG</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Generated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 7: PHIẾU NHẬP HÀNG -->
+        <div id="tab-vouchers" class="tab-pane-content" style="display: none;">
+            <div class="admin-table-box">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="m-0">QUẢN LÝ PHIẾU NHẬP HÀNG</h3>
+                    <button class="btn btn-outline-warning btn-sm d-flex align-items-center gap-2" id="btn-add-voucher" style="font-weight: 700; border-radius: 8px; padding: 8px 16px;">
+                        <i class="fas fa-plus"></i> TẠO PHIẾU NHẬP
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="custom-table" id="vouchers-table">
+                        <thead>
+                            <tr>
+                                <th>MÃ PHIẾU</th>
+                                <th>NHÀ CUNG CẤP</th>
+                                <th>SẢN PHẨM NHẬP</th>
+                                <th>TỔNG TIỀN</th>
+                                <th>NGÀY NHẬP</th>
+                                <th>HÀNH ĐỘNG</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Generated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </main>
 </div>
 
@@ -349,15 +500,21 @@ if (!isset($_SESSION['user']) || $_SESSION['user']['username'] !== 'admin' || $_
                 <input type="text" id="form-product-name" required class="form-control" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: white; font-size: 13px; padding: 10px 14px;">
             </div>
             
-            <div class="mb-2">
-                <label class="text-secondary small fw-bold mb-1" style="font-size: 11px;">GIÁ BÁN (VNĐ)</label>
-                <input type="number" id="form-product-price" required min="0" class="form-control" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: white; font-size: 13px; padding: 10px 14px;">
+            <div class="row g-2 mb-2">
+                <div class="col-6">
+                    <label class="text-secondary small fw-bold mb-1" style="font-size: 11px;">GIÁ BÁN (VNĐ)</label>
+                    <input type="text" id="form-product-price" required class="form-control" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: white; font-size: 13px; padding: 10px 14px;">
+                </div>
+                <div class="col-6">
+                    <label class="text-secondary small fw-bold mb-1" style="font-size: 11px;">TỶ SUẤT LỢI NHUẬN (%)</label>
+                    <input type="number" id="form-product-profit-rate" class="form-control" placeholder="Lãi / Giá vốn" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: white; font-size: 13px; padding: 10px 14px;">
+                </div>
             </div>
 
             <div class="row g-2 mb-2">
                 <div class="col-6">
                     <label class="text-secondary small fw-bold mb-1" style="font-size: 11px;">GIÁ NHẬP (VNĐ)</label>
-                    <input type="number" id="form-product-cost-price" required min="0" class="form-control" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: white; font-size: 13px; padding: 10px 14px;">
+                    <input type="text" id="form-product-cost-price" required class="form-control" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: white; font-size: 13px; padding: 10px 14px;">
                 </div>
                 <div class="col-6">
                     <label class="text-secondary small fw-bold mb-1" style="font-size: 11px;">TỒN KHO</label>
@@ -404,6 +561,74 @@ if (!isset($_SESSION['user']) || $_SESSION['user']['username'] !== 'admin' || $_
 </div>
 <div class="specs-modal-overlay" id="admin-product-overlay"></div>
 
+<!-- Category Modal -->
+<div class="specs-modal" id="admin-category-modal" style="max-width: 400px;">
+    <div class="specs-modal-content p-4" style="position: relative;">
+        <span class="specs-modal-close" id="modal-category-close" style="position: absolute; right: 18px; top: 18px; font-size: 20px; cursor: pointer; color: white;">&times;</span>
+        <h3 class="text-white mb-4" id="modal-category-title" style="font-weight: 800; font-size: 16px;">THÊM DANH MỤC MỚI</h3>
+        
+        <form id="category-form" action="javascript:void(0)" class="w-100 p-0 m-0 bg-transparent border-0 d-flex flex-column gap-3">
+            <input type="hidden" id="form-category-id" value="">
+            
+            <div class="mb-2">
+                <label class="text-secondary small fw-bold mb-1" style="font-size: 11px;">MÃ DANH MỤC (slug)</label>
+                <input type="text" id="form-category-name" required class="form-control" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: white; font-size: 13px; padding: 10px 14px;">
+            </div>
+            
+            <div class="mb-3">
+                <label class="text-secondary small fw-bold mb-1" style="font-size: 11px;">TÊN DANH MỤC HIỂN THỊ</label>
+                <input type="text" id="form-category-display" required class="form-control" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: white; font-size: 13px; padding: 10px 14px;">
+            </div>
+            
+            <button type="submit" class="w-100 btn btn-warning py-3" style="font-weight: 700; border-radius: 8px; font-size: 13px;">LƯU DANH MỤC</button>
+        </form>
+    </div>
+</div>
+<div class="specs-modal-overlay" id="admin-category-overlay"></div>
+
+<!-- Voucher Modal -->
+<div class="specs-modal" id="admin-voucher-modal" style="max-width: 650px;">
+    <div class="specs-modal-content p-4" style="position: relative;">
+        <span class="specs-modal-close" id="modal-voucher-close" style="position: absolute; right: 18px; top: 18px; font-size: 20px; cursor: pointer; color: white;">&times;</span>
+        <h3 class="text-white mb-4" id="modal-voucher-title" style="font-weight: 800; font-size: 16px;">TẠO PHIẾU NHẬP HÀNG</h3>
+        
+        <form id="voucher-form" action="javascript:void(0)" class="w-100 p-0 m-0 bg-transparent border-0 d-flex flex-column gap-3" style="max-width: 100%;">
+            <input type="hidden" id="form-voucher-id" value="">
+            
+            <div class="row g-2 mb-2">
+                <div class="col-6">
+                    <label class="text-secondary small fw-bold mb-1" style="font-size: 11px;">MÃ PHIẾU NHẬP</label>
+                    <input type="text" id="form-voucher-code" required placeholder="PN-XXXX" class="form-control" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: white; font-size: 13px; padding: 10px 14px;">
+                </div>
+                <div class="col-6">
+                    <label class="text-secondary small fw-bold mb-1" style="font-size: 11px;">NHÀ CUNG CẤP</label>
+                    <input type="text" id="form-voucher-provider" required placeholder="Nhà cung cấp..." class="form-control" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: white; font-size: 13px; padding: 10px 14px;">
+                </div>
+            </div>
+
+            <!-- Items list inside voucher -->
+            <div class="mb-3">
+                <label class="text-secondary small fw-bold mb-2 d-flex justify-content-between align-items-center" style="font-size: 11px;">
+                    <span>DANH SÁCH SẢN PHẨM NHẬP HÀNG</span>
+                    <button type="button" class="btn btn-outline-info btn-sm" id="btn-add-voucher-item" style="font-size: 10px; padding: 2px 8px; border-radius: 4px;"><i class="fas fa-plus"></i> Thêm sản phẩm</button>
+                </label>
+                
+                <div id="voucher-items-container" class="d-flex flex-column gap-2" style="max-height: 200px; overflow-y: auto; padding-right: 5px;">
+                    <!-- Added dynamically -->
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between align-items-center mb-3 p-3 rounded" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color);">
+                <span class="text-secondary small fw-bold">TỔNG GIÁ TRỊ NHẬP HÀNG:</span>
+                <span id="voucher-total-display" class="text-gold fw-bold fs-5">0đ</span>
+            </div>
+
+            <button type="submit" class="w-100 btn btn-warning py-3" style="font-weight: 700; border-radius: 8px; font-size: 13px;">LƯU PHIẾU NHẬP</button>
+        </form>
+    </div>
+</div>
+<div class="specs-modal-overlay" id="admin-voucher-overlay"></div>
+
 <!-- Bootstrap Bundle JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -418,6 +643,68 @@ document.addEventListener("DOMContentLoaded", function() {
         return amount.toLocaleString("vi-VN") + "đ";
     }
 
+    function formatNumberWithDots(val) {
+        let clean = val.toString().replace(/\D/g, "");
+        if (clean === "") return "";
+        return clean.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+
+    function setupPriceFormatting(inputEl) {
+        if (!inputEl) return;
+        inputEl.addEventListener("input", function(e) {
+            let cursorPosition = this.selectionStart;
+            let originalLen = this.value.length;
+
+            let formatted = formatNumberWithDots(this.value);
+            this.value = formatted;
+
+            let newLen = this.value.length;
+            cursorPosition = cursorPosition + (newLen - originalLen);
+            this.setSelectionRange(cursorPosition, cursorPosition);
+        });
+    }
+
+    const priceInput = document.getElementById("form-product-price");
+    const costInput = document.getElementById("form-product-cost-price");
+    const profitRateInput = document.getElementById("form-product-profit-rate");
+
+    setupPriceFormatting(priceInput);
+    setupPriceFormatting(costInput);
+
+    function getCleanNumber(val) {
+        return parseInt(val.toString().replace(/\./g, "")) || 0;
+    }
+
+    function updateProfitRate() {
+        const price = getCleanNumber(priceInput.value);
+        const cost = getCleanNumber(costInput.value);
+        if (cost > 0) {
+            const rate = Math.round((price - cost) / cost * 100);
+            profitRateInput.value = rate;
+        } else {
+            profitRateInput.value = 0;
+        }
+    }
+
+    function updatePriceFromRate() {
+        const cost = getCleanNumber(costInput.value);
+        const rate = parseFloat(profitRateInput.value) || 0;
+        const price = Math.round(cost * (1 + rate / 100));
+        priceInput.value = formatNumberWithDots(price.toString());
+    }
+
+    if (priceInput && costInput && profitRateInput) {
+        priceInput.addEventListener("input", function() {
+            setTimeout(updateProfitRate, 10);
+        });
+        costInput.addEventListener("input", function() {
+            setTimeout(updateProfitRate, 10);
+        });
+        profitRateInput.addEventListener("input", function() {
+            updatePriceFromRate();
+        });
+    }
+
     // 2. Chuyển đổi tab SPA mượt mà
     const menuItems = document.querySelectorAll(".admin-menu li[data-tab]");
     const tabPanes = document.querySelectorAll(".tab-pane-content");
@@ -427,6 +714,8 @@ document.addEventListener("DOMContentLoaded", function() {
     const tabHeaders = {
         overview: { title: "TỔNG QUAN HỆ THỐNG", subtitle: "Báo cáo số liệu kinh doanh hôm nay" },
         products: { title: "QUẢN LÝ SẢN PHẨM", subtitle: "Danh sách sản phẩm đang mở bán trên website" },
+        categories: { title: "QUẢN LÝ DANH MỤC", subtitle: "Quản lý phân loại sản phẩm trên cửa hàng" },
+        vouchers: { title: "QUẢN LÝ PHIẾU NHẬP HÀNG", subtitle: "Nhập thêm tồn kho sản phẩm từ nhà cung cấp" },
         orders: { title: "QUẢN LÝ ĐƠN HÀNG", subtitle: "Danh sách và trạng thái các giao dịch mua sắm" },
         customers: { title: "QUẢN LÝ TÀI KHOẢN", subtitle: "Xem thông tin thành viên đăng ký và quản lý vai trò" },
         settings: { title: "CẤU HÌNH HỆ THỐNG", subtitle: "Thiết lập thông tin hiển thị cơ bản của cửa hàng" }
@@ -476,24 +765,54 @@ document.addEventListener("DOMContentLoaded", function() {
                             recentOrdersContainer.innerHTML = "";
                             if (data.recent_orders.length === 0) {
                                 recentOrdersContainer.innerHTML = `<tr><td colspan="5" class="text-center text-secondary py-4">Chưa có đơn hàng nào được đặt.</td></tr>`;
-                                return;
-                            }
-                            data.recent_orders.forEach(o => {
-                                let statusClass = "warning";
-                                if (o.status === "Đã thanh toán" || o.status === "Hoàn thành") statusClass = "success";
-                                else if (o.status === "Đang giao hàng") statusClass = "success";
-                                else if (o.status === "Đã hủy") statusClass = "danger";
+                            } else {
+                                data.recent_orders.forEach(o => {
+                                    let statusClass = "warning";
+                                    if (o.status === "Đã thanh toán" || o.status === "Hoàn thành") statusClass = "success";
+                                    else if (o.status === "Đang giao hàng") statusClass = "success";
+                                    else if (o.status === "Đã hủy") statusClass = "danger";
 
-                                const tr = document.createElement("tr");
-                                tr.innerHTML = `
-                                    <td><strong>#${o.order_code}</strong></td>
-                                    <td>${o.customer_name}</td>
-                                    <td><span class="text-gold font-weight-bold">${formatVND(parseFloat(o.total_amount))}</span></td>
-                                    <td>${o.payment_method === 'cod' ? 'COD' : (o.payment_method === 'bank' ? 'Chuyển khoản' : 'Thẻ Visa')}</td>
-                                    <td><span class="status-pill ${statusClass}">${o.status}</span></td>
-                                `;
-                                recentOrdersContainer.appendChild(tr);
-                            });
+                                    const tr = document.createElement("tr");
+                                    tr.innerHTML = `
+                                        <td><strong>#${o.order_code}</strong></td>
+                                        <td>${o.customer_name}</td>
+                                        <td><span class="text-gold font-weight-bold">${formatVND(parseFloat(o.total_amount))}</span></td>
+                                        <td>${o.payment_method === 'cod' ? 'COD' : (o.payment_method === 'bank' ? 'Chuyển khoản' : 'Thẻ Visa')}</td>
+                                        <td><span class="status-pill ${statusClass}">${o.status}</span></td>
+                                    `;
+                                    recentOrdersContainer.appendChild(tr);
+                                });
+                            }
+                        }
+                    }
+                });
+
+            // Also fetch products to list low-stock items for visual warning
+            fetch("api.php?action=products_list")
+                .then(r => r.json())
+                .then(pData => {
+                    if (pData.success) {
+                        const lowStockBox = document.getElementById("low-stock-warning-box");
+                        const lowStockBody = document.querySelector("#low-stock-table tbody");
+                        if (lowStockBox && lowStockBody) {
+                            const lowStockItems = pData.products.filter(p => parseInt(p.stock) <= 5);
+                            if (lowStockItems.length > 0) {
+                                lowStockBox.style.display = "block";
+                                lowStockBody.innerHTML = "";
+                                lowStockItems.forEach(p => {
+                                    const stockVal = parseInt(p.stock);
+                                    const tr = document.createElement("tr");
+                                    tr.innerHTML = `
+                                        <td><img src="../images/${p.img}" alt="${p.name}" style="width: 32px; height: 32px; object-fit: contain; background: white; border-radius: 4px;" onerror="this.src='../images/ip16pm.webp'"></td>
+                                        <td><strong>${p.name}</strong></td>
+                                        <td><span class="text-danger fw-bold">${stockVal} chiếc</span></td>
+                                        <td><span class="badge ${stockVal === 0 ? 'bg-danger' : 'bg-warning text-dark'}">${stockVal === 0 ? 'Hết hàng' : 'Cực thấp'}</span></td>
+                                    `;
+                                    lowStockBody.appendChild(tr);
+                                });
+                            } else {
+                                lowStockBox.style.display = "none";
+                            }
                         }
                     }
                 });
@@ -533,6 +852,30 @@ document.addEventListener("DOMContentLoaded", function() {
                         renderSettings();
                     }
                 });
+        } else if (tab === "categories") {
+            fetch("api.php?action=categories_list")
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        renderCategories(data.categories);
+                    }
+                });
+        } else if (tab === "vouchers") {
+            // Load products first so we can select them in vouchers
+            fetch("api.php?action=products_list")
+                .then(r => r.json())
+                .then(pData => {
+                    if (pData.success) {
+                        products = pData.products;
+                        fetch("api.php?action=vouchers_list")
+                            .then(r => r.json())
+                            .then(vData => {
+                                if (vData.success) {
+                                    renderVouchers(vData.vouchers);
+                                }
+                            });
+                    }
+                });
         }
     }
 
@@ -544,11 +887,37 @@ document.addEventListener("DOMContentLoaded", function() {
         productsBody.innerHTML = "";
         const searchVal = document.getElementById("product-search-input").value.trim().toLowerCase();
         const catVal = document.getElementById("product-category-filter").value;
+        const stockFilterVal = document.getElementById("product-stock-filter").value;
+
+        const priceMin = parseFloat(document.getElementById("product-price-min").value) || 0;
+        const priceMax = parseFloat(document.getElementById("product-price-max").value) || Infinity;
+        const costMin = parseFloat(document.getElementById("product-cost-min").value) || 0;
+        const costMax = parseFloat(document.getElementById("product-cost-max").value) || Infinity;
+        const profitMin = parseFloat(document.getElementById("product-profit-min").value) || -Infinity;
+        const profitMax = parseFloat(document.getElementById("product-profit-max").value) || Infinity;
 
         const filtered = products.filter(p => {
+            const price = parseFloat(p.price);
+            const cost = parseFloat(p.cost_price || 0);
+            const profitVal = price - cost;
+            const profitPct = cost > 0 ? (profitVal / cost * 100) : 0;
+            const stockVal = parseInt(p.stock || 0);
+
             const matchesSearch = p.name.toLowerCase().includes(searchVal);
             const matchesCat = (catVal === "all" || p.category === catVal);
-            return matchesSearch && matchesCat;
+            
+            const matchesPrice = price >= priceMin && price <= priceMax;
+            const matchesCost = cost >= costMin && cost <= costMax;
+            const matchesProfit = profitPct >= profitMin && profitPct <= profitMax;
+
+            let matchesStock = true;
+            if (stockFilterVal === "low") {
+                matchesStock = stockVal <= 5;
+            } else if (stockFilterVal === "out") {
+                matchesStock = stockVal === 0;
+            }
+
+            return matchesSearch && matchesCat && matchesPrice && matchesCost && matchesProfit && matchesStock;
         });
 
         if (filtered.length === 0) {
@@ -573,6 +942,13 @@ document.addEventListener("DOMContentLoaded", function() {
             }
 
             const tr = document.createElement("tr");
+
+            // Low-stock row highlighting
+            if (stockVal <= 5) {
+                tr.style.background = "rgba(255, 193, 7, 0.04)";
+                tr.style.borderLeft = "3px solid var(--accent-gold)";
+            }
+
             tr.innerHTML = `
                 <td><img src="../images/${p.img}" alt="${p.name}" style="width: 42px; height: 42px; object-fit: contain; background: white; border-radius: 6px; padding: 2px;" onerror="this.src='../images/ip16pm.webp'"></td>
                 <td><strong>${p.name}</strong> ${isSaleVal ? '<span class="badge bg-danger small ms-1">-20%</span>' : ''}</td>
@@ -581,6 +957,10 @@ document.addEventListener("DOMContentLoaded", function() {
                 <td>
                     <span class="text-success fw-bold">${formatVND(profit)}</span><br>
                     <small class="text-muted">(${profitRate}%)</small>
+                </td>
+                <td>
+                    <span class="text-info small fw-bold">N: ${p.total_imported || 0}</span> | 
+                    <span class="text-warning small fw-bold">X: ${p.total_exported || 0}</span>
                 </td>
                 <td>${stockHTML}</td>
                 <td><span class="text-uppercase small" style="letter-spacing: 0.5px;">${p.category}</span></td>
@@ -596,7 +976,7 @@ document.addEventListener("DOMContentLoaded", function() {
         productsBody.querySelectorAll(".delete-product-btn").forEach(btn => {
             btn.addEventListener("click", function() {
                 const idx = parseInt(this.getAttribute("data-index"));
-                const prod = products[idx];
+                const prod = filtered[idx];
                 if (confirm(`Bạn có chắc chắn muốn xóa sản phẩm "${prod.name}"?`)) {
                     fetch("api.php?action=delete_product", {
                         method: "POST",
@@ -620,7 +1000,11 @@ document.addEventListener("DOMContentLoaded", function() {
         productsBody.querySelectorAll(".edit-product-btn").forEach(btn => {
             btn.addEventListener("click", function() {
                 const idx = parseInt(this.getAttribute("data-index"));
-                openProductModal(idx);
+                const prod = filtered[idx];
+                const realIdx = products.findIndex(p => p.id === prod.id);
+                if (realIdx !== -1) {
+                    openProductModal(realIdx);
+                }
             });
         });
     }
@@ -648,8 +1032,15 @@ document.addEventListener("DOMContentLoaded", function() {
             title.textContent = "CẬP NHẬT SẢN PHẨM";
             idxField.value = index;
             document.getElementById("form-product-name").value = products[index].name;
-            document.getElementById("form-product-price").value = products[index].price;
-            document.getElementById("form-product-cost-price").value = products[index].cost_price || 0;
+            document.getElementById("form-product-price").value = formatNumberWithDots(products[index].price.toString());
+            document.getElementById("form-product-cost-price").value = formatNumberWithDots((products[index].cost_price || 0).toString());
+            
+            // Calculate and set profit rate
+            const cost = parseInt(products[index].cost_price || 0);
+            const price = parseInt(products[index].price);
+            const rate = cost > 0 ? Math.round((price - cost) / cost * 100) : 0;
+            document.getElementById("form-product-profit-rate").value = rate;
+
             document.getElementById("form-product-stock").value = products[index].stock || 0;
             document.getElementById("form-product-category").value = products[index].category;
             const isSaleVal = (products[index].is_sale == 1 || products[index].isSale) ? "true" : "false";
@@ -660,7 +1051,9 @@ document.addEventListener("DOMContentLoaded", function() {
             title.textContent = "THÊM SẢN PHẨM MỚI";
             idxField.value = "";
             form.reset();
+            document.getElementById("form-product-price").value = "";
             document.getElementById("form-product-cost-price").value = "";
+            document.getElementById("form-product-profit-rate").value = "";
             document.getElementById("form-product-stock").value = "";
         }
         const uploadStatus = document.getElementById("image-upload-status");
@@ -681,8 +1074,8 @@ document.addEventListener("DOMContentLoaded", function() {
             e.preventDefault();
             const idx = document.getElementById("form-product-index").value;
             const name = document.getElementById("form-product-name").value.trim();
-            const price = parseInt(document.getElementById("form-product-price").value);
-            const costPrice = parseInt(document.getElementById("form-product-cost-price").value || 0);
+            const price = parseInt(document.getElementById("form-product-price").value.replace(/\./g, "")) || 0;
+            const costPrice = parseInt((document.getElementById("form-product-cost-price").value || "0").replace(/\./g, "")) || 0;
             const stock = parseInt(document.getElementById("form-product-stock").value || 0);
             const category = document.getElementById("form-product-category").value;
             const isSale = document.getElementById("form-product-sale").value === "true" ? 1 : 0;
@@ -734,6 +1127,22 @@ document.addEventListener("DOMContentLoaded", function() {
     const filterCat = document.getElementById("product-category-filter");
     if (searchInput) searchInput.addEventListener("input", renderProducts);
     if (filterCat) filterCat.addEventListener("change", renderProducts);
+
+    const filterStock = document.getElementById("product-stock-filter");
+    const priceMinInput = document.getElementById("product-price-min");
+    const priceMaxInput = document.getElementById("product-price-max");
+    const costMinInput = document.getElementById("product-cost-min");
+    const costMaxInput = document.getElementById("product-cost-max");
+    const profitMinInput = document.getElementById("product-profit-min");
+    const profitMaxInput = document.getElementById("product-profit-max");
+
+    if (filterStock) filterStock.addEventListener("change", renderProducts);
+    if (priceMinInput) priceMinInput.addEventListener("input", renderProducts);
+    if (priceMaxInput) priceMaxInput.addEventListener("input", renderProducts);
+    if (costMinInput) costMinInput.addEventListener("input", renderProducts);
+    if (costMaxInput) costMaxInput.addEventListener("input", renderProducts);
+    if (profitMinInput) profitMinInput.addEventListener("input", renderProducts);
+    if (profitMaxInput) profitMaxInput.addEventListener("input", renderProducts);
 
     // Image selection and AJAX upload logic
     const btnBrowse = document.getElementById("btn-browse-image");
@@ -789,18 +1198,49 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     // TAB 3: RENDER ORDERS
+    let orderSortAddressAsc = false;
+
     function renderOrders() {
         const ordersBody = document.querySelector("#orders-table tbody");
         if (!ordersBody) return;
 
         ordersBody.innerHTML = "";
 
-        if (orders.length === 0) {
-            ordersBody.innerHTML = `<tr><td colspan="7" class="text-center text-secondary py-4">Chưa có giao dịch đặt hàng nào.</td></tr>`;
+        const searchVal = document.getElementById("order-search-input").value.trim().toLowerCase();
+        const statusVal = document.getElementById("order-status-filter").value;
+        const dateMinVal = document.getElementById("order-date-min").value;
+        const dateMaxVal = document.getElementById("order-date-max").value;
+
+        let filtered = orders.filter(o => {
+            const matchesSearch = o.orderId.toLowerCase().includes(searchVal) || o.customerName.toLowerCase().includes(searchVal);
+            const matchesStatus = (statusVal === "all" || o.status === statusVal);
+            
+            let matchesDate = true;
+            if (dateMinVal) {
+                matchesDate = matchesDate && (o.date >= dateMinVal);
+            }
+            if (dateMaxVal) {
+                matchesDate = matchesDate && (o.date <= dateMaxVal);
+            }
+
+            return matchesSearch && matchesStatus && matchesDate;
+        });
+
+        // Apply sorting alphabetically by address (A-Z) if active
+        if (orderSortAddressAsc) {
+            filtered.sort((a, b) => {
+                const addrA = (a.address || "").toLowerCase();
+                const addrB = (b.address || "").toLowerCase();
+                return addrA.localeCompare(addrB, "vi");
+            });
+        }
+
+        if (filtered.length === 0) {
+            ordersBody.innerHTML = `<tr><td colspan="7" class="text-center text-secondary py-4">Không tìm thấy đơn hàng nào phù hợp.</td></tr>`;
             return;
         }
 
-        orders.forEach((o, index) => {
+        filtered.forEach((o) => {
             const itemsHTML = o.items.map(item => `
                 <div class="small d-flex justify-content-between mb-1" style="font-size: 11px;">
                     <span class="text-white">${item.title}</span>
@@ -814,7 +1254,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 <td>
                     <div style="font-weight: 700; font-size: 13px;">${o.customerName}</div>
                     <div class="text-secondary" style="font-size: 11px;">SĐT: ${o.phone}</div>
-                    <div class="text-secondary" style="font-size: 10px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${o.address}">${o.address}</div>
+                    <div class="text-secondary text-wrap" style="font-size: 10px; max-width: 200px;" title="${o.address}">${o.address}</div>
                 </td>
                 <td style="min-width: 200px;">${itemsHTML}</td>
                 <td><span class="text-gold font-weight-bold">${formatVND(parseInt(o.grandTotal))}</span></td>
@@ -854,6 +1294,33 @@ document.addEventListener("DOMContentLoaded", function() {
                     }
                 });
             });
+        });
+    }
+
+    const orderSearch = document.getElementById("order-search-input");
+    const orderStatusFilter = document.getElementById("order-status-filter");
+    const orderDateMin = document.getElementById("order-date-min");
+    const orderDateMax = document.getElementById("order-date-max");
+    const btnSortAddress = document.getElementById("btn-sort-order-address");
+
+    if (orderSearch) orderSearch.addEventListener("input", renderOrders);
+    if (orderStatusFilter) orderStatusFilter.addEventListener("change", renderOrders);
+    if (orderDateMin) orderDateMin.addEventListener("input", renderOrders);
+    if (orderDateMax) orderDateMax.addEventListener("input", renderOrders);
+
+    if (btnSortAddress) {
+        btnSortAddress.addEventListener("click", function() {
+            orderSortAddressAsc = !orderSortAddressAsc;
+            if (orderSortAddressAsc) {
+                btnSortAddress.innerHTML = `<i class="fas fa-sort-alpha-up"></i> ĐÃ XẾP ĐỊA CHỈ (A-Z)`;
+                btnSortAddress.classList.remove("btn-outline-warning");
+                btnSortAddress.classList.add("btn-warning");
+            } else {
+                btnSortAddress.innerHTML = `<i class="fas fa-sort-alpha-down"></i> XẾP THEO ĐỊA CHỈ (A-Z)`;
+                btnSortAddress.classList.remove("btn-warning");
+                btnSortAddress.classList.add("btn-outline-warning");
+            }
+            renderOrders();
         });
     }
 
@@ -982,6 +1449,370 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
+    // =========================================================================
+    // TAB 6: RENDER CATEGORIES & MODAL EVENTS
+    // =========================================================================
+    let localCategories = [];
+
+    function renderCategories(cats) {
+        localCategories = cats;
+        const body = document.querySelector("#categories-table tbody");
+        if (!body) return;
+        body.innerHTML = "";
+
+        if (cats.length === 0) {
+            body.innerHTML = `<tr><td colspan="4" class="text-center text-secondary py-4">Chưa có danh mục nào.</td></tr>`;
+            return;
+        }
+
+        cats.forEach((cat, idx) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td><code>${cat.id}</code></td>
+                <td><strong>${cat.name}</strong></td>
+                <td>${cat.display_name}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-info edit-cat-btn me-1" data-id="${cat.id}" data-index="${idx}"><i class="fas fa-edit"></i> Sửa</button>
+                    <button class="btn btn-sm btn-outline-danger delete-cat-btn" data-id="${cat.id}"><i class="fas fa-trash-alt"></i> Xóa</button>
+                </td>
+            `;
+            body.appendChild(tr);
+        });
+
+        // Edit category trigger
+        body.querySelectorAll(".edit-cat-btn").forEach(btn => {
+            btn.addEventListener("click", function() {
+                const idx = parseInt(this.getAttribute("data-index"));
+                openCategoryModal(localCategories[idx]);
+            });
+        });
+
+        // Delete category trigger
+        body.querySelectorAll(".delete-cat-btn").forEach(btn => {
+            btn.addEventListener("click", function() {
+                const id = this.getAttribute("data-id");
+                if (confirm("Bạn có chắc chắn muốn xóa danh mục này? Các sản phẩm thuộc danh mục này sẽ mất phân loại.")) {
+                    fetch("api.php?action=delete_category", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ id: id })
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        alert(data.message);
+                        loadCategoryDropdowns();
+                        loadTabData("categories");
+                    });
+                }
+            });
+        });
+    }
+
+    const catModal = document.getElementById("admin-category-modal");
+    const catOverlay = document.getElementById("admin-category-overlay");
+    const catClose = document.getElementById("modal-category-close");
+    const btnAddCat = document.getElementById("btn-add-category");
+    const catForm = document.getElementById("category-form");
+
+    if (btnAddCat) btnAddCat.addEventListener("click", () => openCategoryModal());
+    if (catClose) catClose.addEventListener("click", closeCategoryModal);
+    if (catOverlay) catOverlay.addEventListener("click", closeCategoryModal);
+
+    function openCategoryModal(cat = null) {
+        if (!catModal || !catOverlay) return;
+        catModal.classList.add("active");
+        catOverlay.classList.add("active");
+        
+        const title = document.getElementById("modal-category-title");
+        const idField = document.getElementById("form-category-id");
+        const nameField = document.getElementById("form-category-name");
+        const displayField = document.getElementById("form-category-display");
+
+        if (cat) {
+            title.textContent = "CẬP NHẬT DANH MỤC";
+            idField.value = cat.id;
+            nameField.value = cat.name;
+            displayField.value = cat.display_name;
+        } else {
+            title.textContent = "THÊM DANH MỤC MỚI";
+            idField.value = "";
+            nameField.value = "";
+            displayField.value = "";
+        }
+    }
+
+    function closeCategoryModal() {
+        if (catModal && catOverlay) {
+            catModal.classList.remove("active");
+            catOverlay.classList.remove("active");
+        }
+    }
+
+    if (catForm) {
+        catForm.addEventListener("submit", function(e) {
+            e.preventDefault();
+            const id = document.getElementById("form-category-id").value;
+            const name = document.getElementById("form-category-name").value.trim();
+            const display_name = document.getElementById("form-category-display").value.trim();
+
+            fetch("api.php?action=save_category", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id, name, display_name })
+            })
+            .then(r => r.json())
+            .then(data => {
+                alert(data.message);
+                if (data.success) {
+                    closeCategoryModal();
+                    loadCategoryDropdowns();
+                    loadTabData("categories");
+                }
+            });
+        });
+    }
+
+    // Dynamic populate Category dropdowns in product tab
+    function loadCategoryDropdowns() {
+        fetch("api.php?action=categories_list")
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    const filterDropdown = document.getElementById("product-category-filter");
+                    const formDropdown = document.getElementById("form-product-category");
+                    
+                    if (filterDropdown) {
+                        const currentVal = filterDropdown.value;
+                        filterDropdown.innerHTML = `<option value="all">Tất cả danh mục</option>`;
+                        data.categories.forEach(cat => {
+                            filterDropdown.innerHTML += `<option value="${cat.name}">${cat.display_name}</option>`;
+                        });
+                        filterDropdown.value = currentVal || "all";
+                    }
+                    if (formDropdown) {
+                        formDropdown.innerHTML = "";
+                        data.categories.forEach(cat => {
+                            formDropdown.innerHTML += `<option value="${cat.name}">${cat.display_name}</option>`;
+                        });
+                    }
+                }
+            });
+    }
+
+    // =========================================================================
+    // TAB 7: RENDER IMPORT VOUCHERS & MODAL EVENTS
+    // =========================================================================
+    let localVouchers = [];
+
+    function renderVouchers(vouchers) {
+        localVouchers = vouchers;
+        const body = document.querySelector("#vouchers-table tbody");
+        if (!body) return;
+        body.innerHTML = "";
+
+        if (vouchers.length === 0) {
+            body.innerHTML = `<tr><td colspan="6" class="text-center text-secondary py-4">Chưa có phiếu nhập hàng nào được tạo.</td></tr>`;
+            return;
+        }
+
+        vouchers.forEach((v, idx) => {
+            const itemsHTML = v.items.map(item => `
+                <div class="small d-flex justify-content-between mb-1" style="font-size: 11px;">
+                    <span class="text-white">${item.product_name}</span>
+                    <span class="text-secondary">SL: ${item.quantity} | Giá: ${formatVND(parseFloat(item.import_price))}</span>
+                </div>
+            `).join("");
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td><strong>#${v.voucher_code}</strong></td>
+                <td>${v.provider}</td>
+                <td>${itemsHTML}</td>
+                <td><span class="text-gold fw-bold">${formatVND(parseFloat(v.total_amount))}</span></td>
+                <td><span class="small text-secondary">${v.created_at}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-info edit-voucher-btn me-1" data-index="${idx}"><i class="fas fa-edit"></i> Sửa</button>
+                    <button class="btn btn-sm btn-outline-danger delete-voucher-btn" data-id="${v.id}"><i class="fas fa-trash-alt"></i> Xóa</button>
+                </td>
+            `;
+            body.appendChild(tr);
+        });
+
+        // Edit voucher trigger
+        body.querySelectorAll(".edit-voucher-btn").forEach(btn => {
+            btn.addEventListener("click", function() {
+                const idx = parseInt(this.getAttribute("data-index"));
+                openVoucherModal(localVouchers[idx]);
+            });
+        });
+
+        // Delete voucher trigger
+        body.querySelectorAll(".delete-voucher-btn").forEach(btn => {
+            btn.addEventListener("click", function() {
+                const id = this.getAttribute("data-id");
+                if (confirm("Bạn có chắc chắn muốn xóa phiếu nhập này? Tồn kho các sản phẩm trong phiếu nhập sẽ được giảm tương ứng.")) {
+                    fetch("api.php?action=delete_voucher", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ id: id })
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        alert(data.message);
+                        loadTabData("vouchers");
+                    });
+                }
+            });
+        });
+    }
+
+    const voucherModal = document.getElementById("admin-voucher-modal");
+    const voucherOverlay = document.getElementById("admin-voucher-overlay");
+    const voucherClose = document.getElementById("modal-voucher-close");
+    const btnAddVoucher = document.getElementById("btn-add-voucher");
+    const btnAddVoucherItem = document.getElementById("btn-add-voucher-item");
+    const voucherForm = document.getElementById("voucher-form");
+    const voucherItemsContainer = document.getElementById("voucher-items-container");
+
+    if (btnAddVoucher) btnAddVoucher.addEventListener("click", () => openVoucherModal());
+    if (voucherClose) voucherClose.addEventListener("click", closeVoucherModal);
+    if (voucherOverlay) voucherOverlay.addEventListener("click", closeVoucherModal);
+
+    function createVoucherItemRow(item = null) {
+        const row = document.createElement("div");
+        row.className = "row g-2 align-items-center voucher-item-row mb-2";
+        
+        let productOptions = products.map(p => `
+            <option value="${p.id}" ${item && parseInt(item.product_id) === p.id ? "selected" : ""}>${p.name}</option>
+        `).join("");
+
+        row.innerHTML = `
+            <div class="col-6">
+                <select class="form-select text-white select-voucher-item-product" required style="background: #0f131c; border: 1px solid var(--border-color); font-size: 12px; padding: 8px 12px;">
+                    ${productOptions}
+                </select>
+            </div>
+            <div class="col-3">
+                <input type="number" class="form-control text-white input-voucher-item-qty" required min="1" placeholder="SL" value="${item ? item.quantity : 1}" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); font-size: 12px; padding: 8px 12px;">
+            </div>
+            <div class="col-2">
+                <input type="text" class="form-control text-white input-voucher-item-price" required placeholder="Giá" value="${item ? formatNumberWithDots(item.import_price.toString()) : ""}" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); font-size: 12px; padding: 8px 12px;">
+            </div>
+            <div class="col-1 text-center">
+                <button type="button" class="btn btn-link text-danger btn-remove-voucher-item p-0 m-0" style="font-size: 16px;"><i class="fas fa-trash-alt"></i></button>
+            </div>
+        `;
+
+        // Format import price on the fly
+        setupPriceFormatting(row.querySelector(".input-voucher-item-price"));
+
+        // Add event listeners to update total
+        row.querySelector(".input-voucher-item-qty").addEventListener("input", calculateVoucherTotal);
+        row.querySelector(".input-voucher-item-price").addEventListener("input", calculateVoucherTotal);
+
+        row.querySelector(".btn-remove-voucher-item").addEventListener("click", function() {
+            row.remove();
+            calculateVoucherTotal();
+        });
+
+        voucherItemsContainer.appendChild(row);
+        calculateVoucherTotal();
+    }
+
+    if (btnAddVoucherItem) {
+        btnAddVoucherItem.addEventListener("click", () => createVoucherItemRow());
+    }
+
+    function calculateVoucherTotal() {
+        let total = 0;
+        document.querySelectorAll(".voucher-item-row").forEach(row => {
+            const qty = parseInt(row.querySelector(".input-voucher-item-qty").value) || 0;
+            const price = parseInt(row.querySelector(".input-voucher-item-price").value.replace(/\./g, "")) || 0;
+            total += qty * price;
+        });
+        document.getElementById("voucher-total-display").textContent = formatVND(total);
+    }
+
+    function openVoucherModal(v = null) {
+        if (!voucherModal || !voucherOverlay) return;
+        voucherModal.classList.add("active");
+        voucherOverlay.classList.add("active");
+
+        const title = document.getElementById("modal-voucher-title");
+        const idField = document.getElementById("form-voucher-id");
+        const codeField = document.getElementById("form-voucher-code");
+        const providerField = document.getElementById("form-voucher-provider");
+
+        voucherItemsContainer.innerHTML = "";
+
+        if (v) {
+            title.textContent = "CẬP NHẬT PHIẾU NHẬP HÀNG";
+            idField.value = v.id;
+            codeField.value = v.voucher_code;
+            providerField.value = v.provider;
+            
+            v.items.forEach(item => {
+                createVoucherItemRow(item);
+            });
+        } else {
+            title.textContent = "TẠO PHIẾU NHẬP HÀNG MỚI";
+            idField.value = "";
+            codeField.value = "PN-" + Math.floor(1000 + Math.random() * 9000);
+            providerField.value = "";
+            
+            // Add a default item row
+            createVoucherItemRow();
+        }
+    }
+
+    function closeVoucherModal() {
+        if (voucherModal && voucherOverlay) {
+            voucherModal.classList.remove("active");
+            voucherOverlay.classList.remove("active");
+        }
+    }
+
+    if (voucherForm) {
+        voucherForm.addEventListener("submit", function(e) {
+            e.preventDefault();
+            const id = document.getElementById("form-voucher-id").value;
+            const voucher_code = document.getElementById("form-voucher-code").value.trim();
+            const provider = document.getElementById("form-voucher-provider").value.trim();
+            const items = [];
+
+            let hasErrors = false;
+            document.querySelectorAll(".voucher-item-row").forEach(row => {
+                const product_id = row.querySelector(".select-voucher-item-product").value;
+                const quantity = parseInt(row.querySelector(".input-voucher-item-qty").value) || 0;
+                const import_price = parseInt(row.querySelector(".input-voucher-item-price").value.replace(/\./g, "")) || 0;
+
+                if (quantity <= 0 || import_price <= 0) {
+                    hasErrors = true;
+                }
+                items.push({ product_id, quantity, import_price });
+            });
+
+            if (hasErrors || items.length === 0) {
+                alert("Lỗi: Tất cả sản phẩm nhập phải có số lượng và giá nhập hợp lệ (>0)!");
+                return;
+            }
+
+            fetch("api.php?action=save_voucher", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id, voucher_code, provider, items })
+            })
+            .then(r => r.json())
+            .then(data => {
+                alert(data.message);
+                if (data.success) {
+                    closeVoucherModal();
+                    loadTabData("vouchers");
+                }
+            });
+        });
+    }
+
     // 4. Logout Handler
     const logoutBtn = document.getElementById("admin-logout-btn");
     if (logoutBtn) {
@@ -993,6 +1824,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     // Khởi động load trang ban đầu với tab Overview
+    loadCategoryDropdowns();
     loadTabData("overview");
 
     // Set tên admin trên header

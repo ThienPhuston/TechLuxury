@@ -86,7 +86,13 @@ switch ($action) {
 
     case 'products_list':
         try {
-            $stmt = $conn->query("SELECT * FROM products ORDER BY id DESC");
+            $stmt = $conn->query("
+                SELECT p.*,
+                       COALESCE((SELECT SUM(ivi.quantity) FROM import_voucher_items ivi WHERE ivi.product_id = p.id), 0) AS total_imported,
+                       COALESCE((SELECT SUM(oi.quantity) FROM order_items oi JOIN orders o ON o.id = oi.order_id WHERE oi.product_name = p.name AND o.status != 'Đã hủy'), 0) AS total_exported
+                FROM products p 
+                ORDER BY p.id DESC
+            ");
             $products = $stmt->fetchAll();
             echo json_encode(['success' => true, 'products' => $products]);
         } catch (PDOException $e) {
@@ -356,6 +362,191 @@ switch ($action) {
             }
         } else {
             echo json_encode(['success' => false, 'message' => 'Yêu cầu không hợp lệ!']);
+        }
+        break;
+
+
+    case 'categories_list':
+        try {
+            $stmt = $conn->query("SELECT * FROM categories ORDER BY id ASC");
+            $cats = $stmt->fetchAll();
+            echo json_encode(['success' => true, 'categories' => $cats]);
+        } catch (PDOException $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        break;
+
+    case 'save_category':
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $id = $input['id'] ?? null;
+            $name = trim($input['name'] ?? '');
+            $display_name = trim($input['display_name'] ?? '');
+
+            if (empty($name) || empty($display_name)) {
+                echo json_encode(['success' => false, 'message' => 'Vui lòng điền đầy đủ thông tin!']);
+                exit;
+            }
+
+            $name = strtolower(preg_replace('/[^a-zA-Z0-9-]/', '', $name));
+
+            try {
+                if (!empty($id)) {
+                    $stmt = $conn->prepare("UPDATE categories SET name = :name, display_name = :display_name WHERE id = :id");
+                    $stmt->execute(['name' => $name, 'display_name' => $display_name, 'id' => $id]);
+                    echo json_encode(['success' => true, 'message' => 'Cập nhật danh mục thành công!']);
+                } else {
+                    $stmt = $conn->prepare("INSERT INTO categories (name, display_name) VALUES (:name, :display_name)");
+                    $stmt->execute(['name' => $name, 'display_name' => $display_name]);
+                    echo json_encode(['success' => true, 'message' => 'Thêm danh mục thành công!']);
+                }
+            } catch (PDOException $e) {
+                echo json_encode(['success' => false, 'message' => 'Lỗi: Danh mục đã tồn tại hoặc lỗi CSDL!']);
+            }
+        }
+        break;
+
+    case 'delete_category':
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $id = $input['id'] ?? null;
+            if (!$id) {
+                echo json_encode(['success' => false, 'message' => 'ID danh mục không hợp lệ!']);
+                exit;
+            }
+            try {
+                $stmt = $conn->prepare("DELETE FROM categories WHERE id = :id");
+                $stmt->execute(['id' => $id]);
+                echo json_encode(['success' => true, 'message' => 'Xóa danh mục thành công!']);
+            } catch (PDOException $e) {
+                echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            }
+        }
+        break;
+
+    case 'vouchers_list':
+        try {
+            $stmt = $conn->query("SELECT * FROM import_vouchers ORDER BY id DESC");
+            $vouchers = $stmt->fetchAll();
+            foreach ($vouchers as &$v) {
+                $item_stmt = $conn->prepare("
+                    SELECT ivi.*, p.name AS product_name 
+                    FROM import_voucher_items ivi
+                    JOIN products p ON p.id = ivi.product_id
+                    WHERE ivi.voucher_id = :voucher_id
+                ");
+                $item_stmt->execute(['voucher_id' => $v['id']]);
+                $v['items'] = $item_stmt->fetchAll();
+            }
+            echo json_encode(['success' => true, 'vouchers' => $vouchers]);
+        } catch (PDOException $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        break;
+
+    case 'save_voucher':
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $id = $input['id'] ?? null;
+            $voucher_code = trim($input['voucher_code'] ?? '');
+            $provider = trim($input['provider'] ?? '');
+            $items = $input['items'] ?? [];
+
+            if (empty($voucher_code) || empty($provider) || empty($items)) {
+                echo json_encode(['success' => false, 'message' => 'Vui lòng nhập đầy đủ thông tin phiếu nhập!']);
+                exit;
+            }
+
+            try {
+                $conn->beginTransaction();
+
+                $total_amount = 0;
+                foreach ($items as $item) {
+                    $total_amount += intval($item['quantity']) * floatval($item['import_price']);
+                }
+
+                if (!empty($id)) {
+                    // Revert old stock changes
+                    $old_items_stmt = $conn->prepare("SELECT * FROM import_voucher_items WHERE voucher_id = :vid");
+                    $old_items_stmt->execute(['vid' => $id]);
+                    $old_items = $old_items_stmt->fetchAll();
+
+                    $revert_stock = $conn->prepare("UPDATE products SET stock = stock - :qty WHERE id = :pid");
+                    foreach ($old_items as $oi) {
+                        $revert_stock->execute(['qty' => $oi['quantity'], 'pid' => $oi['product_id']]);
+                    }
+
+                    // Delete old items
+                    $del_items = $conn->prepare("DELETE FROM import_voucher_items WHERE voucher_id = :vid");
+                    $del_items->execute(['vid' => $id]);
+
+                    // Update header
+                    $up_v = $conn->prepare("UPDATE import_vouchers SET voucher_code = :code, provider = :provider, total_amount = :total WHERE id = :id");
+                    $up_v->execute(['code' => $voucher_code, 'provider' => $provider, 'total' => $total_amount, 'id' => $id]);
+                    $voucher_id = $id;
+                } else {
+                    // Insert header
+                    $ins_v = $conn->prepare("INSERT INTO import_vouchers (voucher_code, provider, total_amount) VALUES (:code, :provider, :total)");
+                    $ins_v->execute(['code' => $voucher_code, 'provider' => $provider, 'total' => $total_amount]);
+                    $voucher_id = $conn->lastInsertId();
+                }
+
+                // Insert items & update product stock & cost_price
+                $ins_item = $conn->prepare("INSERT INTO import_voucher_items (voucher_id, product_id, quantity, import_price) VALUES (:vid, :pid, :qty, :price)");
+                $add_stock = $conn->prepare("UPDATE products SET stock = stock + :qty, cost_price = :price WHERE id = :pid");
+
+                foreach ($items as $item) {
+                    $pid = intval($item['product_id']);
+                    $qty = intval($item['quantity']);
+                    $price = floatval($item['import_price']);
+
+                    $ins_item->execute(['vid' => $voucher_id, 'pid' => $pid, 'qty' => $qty, 'price' => $price]);
+                    $add_stock->execute(['qty' => $qty, 'price' => $price, 'pid' => $pid]);
+                }
+
+                $conn->commit();
+                echo json_encode(['success' => true, 'message' => 'Lưu phiếu nhập thành công!']);
+            } catch (Exception $e) {
+                if ($conn->inTransaction()) {
+                    $conn->rollBack();
+                }
+                echo json_encode(['success' => false, 'message' => 'Lỗi: ' . $e->getMessage()]);
+            }
+        }
+        break;
+
+    case 'delete_voucher':
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $id = $input['id'] ?? null;
+            if (!$id) {
+                echo json_encode(['success' => false, 'message' => 'ID phiếu nhập không hợp lệ!']);
+                exit;
+            }
+
+            try {
+                $conn->beginTransaction();
+
+                $old_items_stmt = $conn->prepare("SELECT * FROM import_voucher_items WHERE voucher_id = :vid");
+                $old_items_stmt->execute(['vid' => $id]);
+                $old_items = $old_items_stmt->fetchAll();
+
+                $revert_stock = $conn->prepare("UPDATE products SET stock = stock - :qty WHERE id = :pid");
+                foreach ($old_items as $oi) {
+                    $revert_stock->execute(['qty' => $oi['quantity'], 'pid' => $oi['product_id']]);
+                }
+
+                $del_v = $conn->prepare("DELETE FROM import_vouchers WHERE id = :id");
+                $del_v->execute(['id' => $id]);
+
+                $conn->commit();
+                echo json_encode(['success' => true, 'message' => 'Xóa phiếu nhập và hoàn tác kho thành công!']);
+            } catch (Exception $e) {
+                if ($conn->inTransaction()) {
+                    $conn->rollBack();
+                }
+                echo json_encode(['success' => false, 'message' => 'Lỗi: ' . $e->getMessage()]);
+            }
         }
         break;
 

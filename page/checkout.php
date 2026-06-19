@@ -1,6 +1,14 @@
 <?php 
 $path_prefix = "../"; 
 include("../includes/header.php"); 
+
+if (!isset($_SESSION['user'])) {
+    echo "<script>
+        alert('Vui lòng đăng nhập hoặc đăng ký tài khoản để tiến hành thanh toán mua hàng!');
+        window.location.href = '../Account/login.php';
+    </script>";
+    exit();
+}
 ?>
 
 <section class="checkout-page">
@@ -10,31 +18,75 @@ include("../includes/header.php");
         <div class="row g-5">
             <!-- Cột trái: Thông tin nhận hàng & Thanh toán -->
             <div class="col-lg-7">
+                <!-- Split Shipping Toggle Checkbox -->
                 <div class="checkout-box mb-4">
-                    <h3 class="text-white mb-4" style="font-size: 18px; font-weight: 700; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
-                        <i class="fas fa-shipping-fast text-warning me-2"></i> THÔNG TIN NHẬN HÀNG
-                    </h3>
-                    
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="text-secondary small fw-bold mb-2">HỌ VÀ TÊN</label>
-                            <input type="text" id="checkout-name" placeholder="Nguyễn Văn A" required class="form-control" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); color: white; padding: 12px 18px; border-radius: 10px;">
+                    <div class="form-check form-switch m-0 d-flex align-items-center">
+                        <input class="form-check-input" type="checkbox" id="split-shipping-toggle" style="cursor: pointer; width: 40px; height: 20px; accent-color: var(--accent-gold);">
+                        <label class="form-check-label text-warning fw-bold ms-3" for="split-shipping-toggle" style="cursor: pointer; font-size: 14px;">
+                            <i class="fas fa-exchange-alt me-1"></i> Giao hàng đến 2 địa điểm khác nhau (Tách đơn hàng)
+                        </label>
+                    </div>
+                    <p class="text-secondary m-0 mt-2" style="font-size: 11px; line-height: 1.5;">Bật tính năng này nếu bạn muốn giao một số sản phẩm trong giỏ hàng đến địa chỉ thứ 2. Hệ thống sẽ tách thành 2 đơn hàng tương ứng.</p>
+                </div>
+
+                <div id="address-1-panel">
+                    <div class="checkout-box mb-4">
+                        <h3 class="text-white mb-4" id="address-1-title" style="font-size: 16px; font-weight: 700; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+                            <i class="fas fa-shipping-fast text-warning me-2"></i> THÔNG TIN NHẬN HÀNG
+                        </h3>
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="text-secondary small fw-bold mb-2">HỌ VÀ TÊN</label>
+                                <input type="text" id="checkout-name" placeholder="Nguyễn Văn A" required class="form-control" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); color: white; padding: 12px 18px; border-radius: 10px;">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-secondary small fw-bold mb-2">SỐ ĐIỆN THOẠI</label>
+                                <input type="tel" id="checkout-phone" placeholder="0901234567" required class="form-control" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); color: white; padding: 12px 18px; border-radius: 10px;">
+                            </div>
+                            <div class="col-12">
+                                <label class="text-secondary small fw-bold mb-2">ĐỊA CHỈ NHẬN HÀNG</label>
+                                <input type="text" id="checkout-address" placeholder="Số nhà, tên đường, phường/xã..." required class="form-control" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); color: white; padding: 12px 18px; border-radius: 10px;">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-secondary small fw-bold mb-2">TỈNH / THÀNH PHỐ</label>
+                                <input type="text" id="checkout-city" placeholder="TP. Hồ Chí Minh" required class="form-control" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); color: white; padding: 12px 18px; border-radius: 10px;">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-secondary small fw-bold mb-2">GHI CHÚ (NẾU CÓ)</label>
+                                <input type="text" id="checkout-notes" placeholder="Giao hàng giờ hành chính..." class="form-control" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); color: white; padding: 12px 18px; border-radius: 10px;">
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <label class="text-secondary small fw-bold mb-2">SỐ ĐIỆN THOẠI</label>
-                            <input type="tel" id="checkout-phone" placeholder="0901234567" required class="form-control" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); color: white; padding: 12px 18px; border-radius: 10px;">
-                        </div>
-                        <div class="col-12">
-                            <label class="text-secondary small fw-bold mb-2">ĐỊA CHỈ NHẬN HÀNG</label>
-                            <input type="text" id="checkout-address" placeholder="Số nhà, tên đường, phường/xã..." required class="form-control" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); color: white; padding: 12px 18px; border-radius: 10px;">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="text-secondary small fw-bold mb-2">TỈNH / THÀNH PHỐ</label>
-                            <input type="text" id="checkout-city" placeholder="TP. Hồ Chí Minh" required class="form-control" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); color: white; padding: 12px 18px; border-radius: 10px;">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="text-secondary small fw-bold mb-2">GHI CHÚ (NẾU CÓ)</label>
-                            <input type="text" id="checkout-notes" placeholder="Giao hàng giờ hành chính..." class="form-control" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); color: white; padding: 12px 18px; border-radius: 10px;">
+                    </div>
+                </div>
+
+                <div id="address-2-panel" style="display: none;">
+                    <div class="checkout-box mb-4">
+                        <h3 class="text-white mb-4" style="font-size: 16px; font-weight: 700; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+                            <i class="fas fa-shipping-fast text-warning me-2"></i> THÔNG TIN NHẬN HÀNG (ĐỊA CHỈ 2)
+                        </h3>
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="text-secondary small fw-bold mb-2">HỌ VÀ TÊN (ĐỊA CHỈ 2)</label>
+                                <input type="text" id="checkout-name-2" placeholder="Nguyễn Văn B" class="form-control" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); color: white; padding: 12px 18px; border-radius: 10px;">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-secondary small fw-bold mb-2">SỐ ĐIỆN THOẠI (ĐỊA CHỈ 2)</label>
+                                <input type="tel" id="checkout-phone-2" placeholder="0909876543" class="form-control" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); color: white; padding: 12px 18px; border-radius: 10px;">
+                            </div>
+                            <div class="col-12">
+                                <label class="text-secondary small fw-bold mb-2">ĐỊA CHỈ NHẬN HÀNG (ĐỊA CHỈ 2)</label>
+                                <input type="text" id="checkout-address-2" placeholder="Số nhà, tên đường, phường/xã..." class="form-control" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); color: white; padding: 12px 18px; border-radius: 10px;">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-secondary small fw-bold mb-2">TỈNH / THÀNH PHỐ (ĐỊA CHỈ 2)</label>
+                                <input type="text" id="checkout-city-2" placeholder="Hà Nội" class="form-control" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); color: white; padding: 12px 18px; border-radius: 10px;">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-secondary small fw-bold mb-2">GHI CHÚ (ĐỊA CHỈ 2)</label>
+                                <input type="text" id="checkout-notes-2" placeholder="Giao hàng buổi tối..." class="form-control" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); color: white; padding: 12px 18px; border-radius: 10px;">
+                            </div>
                         </div>
                     </div>
                 </div>

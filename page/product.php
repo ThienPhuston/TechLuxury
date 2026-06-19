@@ -40,9 +40,21 @@ include("../includes/header.php");
                         <label class="filter-label">Danh mục sản phẩm</label>
                         <div class="filter-chips" id="page-category-chips">
                             <span class="filter-chip active" data-value="all">Tất cả</span>
-                            <span class="filter-chip" data-value="laptop">Laptop</span>
-                            <span class="filter-chip" data-value="phone">Điện thoại</span>
-                            <span class="filter-chip" data-value="accessory">Phụ kiện</span>
+                            <?php
+                            try {
+                                $cat_query = $conn->query("SELECT * FROM categories ORDER BY id ASC");
+                                $db_cats = $cat_query->fetchAll();
+                            } catch (PDOException $ex) {
+                                $db_cats = [
+                                    ['name' => 'laptop', 'display_name' => 'Laptop'],
+                                    ['name' => 'phone', 'display_name' => 'Điện thoại'],
+                                    ['name' => 'accessory', 'display_name' => 'Phụ kiện']
+                                ];
+                            }
+                            foreach ($db_cats as $cat) {
+                            ?>
+                                <span class="filter-chip" data-value="<?php echo htmlspecialchars($cat['name']); ?>"><?php echo htmlspecialchars($cat['display_name']); ?></span>
+                            <?php } ?>
                         </div>
                     </div>
                 </div>

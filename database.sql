@@ -72,5 +72,38 @@ INSERT INTO `products` (`name`, `price`, `cost_price`, `stock`, `category`, `is_
 ('Galaxy Buds 3', 5990000, 4500000, 50, 'accessory', 0, 'Galaxy bud3.webp', 'Chống nước IPX7, Bluetooth 5.3, Âm bass ấm, Galaxy AI'),
 ('iPhone 16 Standard', 22990000, 18500000, 18, 'phone', 0, 'ip16standard.webp', 'Chip A18 Bionic, Camera 48MP, Dynamic Island, 128GB'),
 ('ASUS ROG Strix G16', 38490000, 31000000, 6, 'laptop', 0, 'ASUS ROG.webp', 'Nvidia RTX 4060, Intel i7-13650HX, RAM 16G, Màn 165Hz'),
-('Xiaomi 14 Ultra Leica', 26990000, 21000000, 14, 'phone', 1, 'XIAOMI.webp', 'Ống kính Leica, Snapdragon 8 Gen 3, Sạc nhanh 90W, 50MP'),
-('Sony WH-1000XM5', 6850000, 5200000, 22, 'accessory', 0, 'sony.webp', 'Chống ồn ANC Best, Pin bền 30H, Hi-Res Audio, Bluetooth 5.2');
+('Xiaomi 14 Ultra Leica', 26990000, 21000000, 14, 'phone', 1, 'XIAOMI.webp', 'Ống kính Leica, Snapdragon 8 Gen 3, Sạc nhanh 90W, 50MP');
+-- Table: categories
+CREATE TABLE IF NOT EXISTS `categories` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `name` VARCHAR(50) NOT NULL UNIQUE,
+    `display_name` VARCHAR(100) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Seed default categories
+INSERT INTO `categories` (`name`, `display_name`) VALUES
+('laptop', 'Laptop'),
+('phone', 'Điện thoại'),
+('accessory', 'Phụ kiện')
+ON DUPLICATE KEY UPDATE `name`=`name`;
+
+-- Table: import_vouchers
+CREATE TABLE IF NOT EXISTS `import_vouchers` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `voucher_code` VARCHAR(20) NOT NULL UNIQUE,
+    `provider` VARCHAR(100) NOT NULL,
+    `total_amount` DECIMAL(15,2) NOT NULL DEFAULT 0,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table: import_voucher_items
+CREATE TABLE IF NOT EXISTS `import_voucher_items` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `voucher_id` INT NOT NULL,
+    `product_id` INT NOT NULL,
+    `quantity` INT NOT NULL,
+    `import_price` DECIMAL(15,2) NOT NULL,
+    FOREIGN KEY (`voucher_id`) REFERENCES `import_vouchers` (`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

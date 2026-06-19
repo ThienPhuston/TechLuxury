@@ -29,11 +29,20 @@ document.addEventListener("DOMContentLoaded", function () {
             const displayImg = "../" + item.img;
             
             const itemHTML = `
-                <div class="checkout-item-summary">
+                <div class="checkout-item-summary" data-item-title="${item.title}">
                     <img src="${displayImg}" alt="${item.title}">
                     <div class="checkout-item-summary-info">
                         <h5>${item.title}</h5>
                         <p>Số lượng: ${item.quantity}</p>
+                        
+                        <!-- Shipping Selector for each item -->
+                        <div class="checkout-item-shipping-select mt-2" style="display: none;">
+                            <label class="text-secondary small fw-bold" style="font-size: 10px; display: block; margin-bottom: 4px;">GIAO ĐẾN ĐỊA CHỈ:</label>
+                            <select class="form-select form-select-sm select-item-dest" data-item-title="${item.title}" style="background: #0f131c; border-color: rgba(255,255,255,0.08); color: white; font-size: 11px; padding: 4px 8px; border-radius: 6px; width: 100%;">
+                                <option value="1">Địa chỉ nhận hàng 1</option>
+                                <option value="2">Địa chỉ nhận hàng 2</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="checkout-item-summary-price">${formatVND(item.price * item.quantity)}</div>
                 </div>
@@ -45,112 +54,207 @@ document.addEventListener("DOMContentLoaded", function () {
         if (grandTotalText) grandTotalText.textContent = formatVND(totalAmount);
     }
 
+    // Toggle split shipping UI
+    const splitShippingToggle = document.getElementById("split-shipping-toggle");
+    const address2Panel = document.getElementById("address-2-panel");
+    const address1Title = document.getElementById("address-1-title");
+
+    if (splitShippingToggle) {
+        splitShippingToggle.addEventListener("change", function() {
+            const isSplit = this.checked;
+            
+            // Show/hide Address 2 panel
+            if (address2Panel) {
+                address2Panel.style.display = isSplit ? "block" : "none";
+            }
+            
+            // Toggle Address 1 Title
+            if (address1Title) {
+                address1Title.innerHTML = isSplit 
+                    ? `<i class="fas fa-shipping-fast text-warning me-2"></i> THÔNG TIN NHẬN HÀNG (ĐỊA CHỈ 1)`
+                    : `<i class="fas fa-shipping-fast text-warning me-2"></i> THÔNG TIN NHẬN HÀNG`;
+            }
+            
+            // Toggle destination dropdowns in cart summary
+            document.querySelectorAll(".checkout-item-shipping-select").forEach(el => {
+                el.style.display = isSplit ? "block" : "none";
+            });
+        });
+    }
+
     // Xử lý nút đặt hàng
     const btnPlaceOrder = document.getElementById("btn-place-order");
     const orderSuccessModal = document.getElementById("order-success-modal");
     const orderSuccessOverlay = document.getElementById("order-success-overlay");
 
-    // Lấy danh sách đơn hàng đã có hoặc khởi tạo mặc định
-    let orders = JSON.parse(localStorage.getItem("techluxury_orders")) || [
-        {
-            orderId: "TL-8942",
-            customerName: "Nguyễn Văn Hùng",
-            phone: "0901234567",
-            address: "123 Đường Lê Lợi, Quận 1, TP. Hồ Chí Minh",
-            paymentMethod: "bank",
-            items: [{ title: "iPhone 16 Pro Max (Desert Gold)", price: 35990000, quantity: 1, img: "images/ip16pm.webp" }],
-            subtotal: 35990000,
-            grandTotal: 35990000,
-            date: "2026-06-15",
-            status: "Đang xử lý"
-        },
-        {
-            orderId: "TL-8712",
-            customerName: "Trần Thị Thu Thủy",
-            phone: "0987654321",
-            address: "456 Đường Nguyễn Trãi, Quận 5, TP. Hồ Chí Minh",
-            paymentMethod: "card",
-            items: [{ title: "Macbook Pro M4 (Space Black)", price: 59990000, quantity: 1, img: "images/macbook-pro-14-inch-m4-pro-24gb-1tb-20gpu-bac-1-639104240462766154-750x500.jpg" }],
-            subtotal: 59990000,
-            grandTotal: 59990000,
-            date: "2026-06-14",
-            status: "Đã thanh toán"
-        },
-        {
-            orderId: "TL-8629",
-            customerName: "Lê Hoàng Nam",
-            phone: "0912345678",
-            address: "789 Đường Điện Biên Phủ, Bình Thạnh, TP. Hồ Chí Minh",
-            paymentMethod: "cod",
-            items: [{ title: "Galaxy Buds 3", price: 5990000, quantity: 1, img: "images/Galaxy bud3.webp" }],
-            subtotal: 5990000,
-            grandTotal: 5990000,
-            date: "2026-06-13",
-            status: "Đang giao hàng"
-        }
-    ];
-
-    if (!localStorage.getItem("techluxury_orders")) {
-        localStorage.setItem("techluxury_orders", JSON.stringify(orders));
-    }
-
     if (btnPlaceOrder) {
         btnPlaceOrder.addEventListener("click", function () {
-            // Kiểm tra tính hợp lệ của biểu mẫu thông tin nhận hàng
-            const name = document.getElementById("checkout-name").value.trim();
-            const phone = document.getElementById("checkout-phone").value.trim();
-            const address = document.getElementById("checkout-address").value.trim();
-            const city = document.getElementById("checkout-city").value.trim();
-            const notes = document.getElementById("checkout-notes").value.trim();
+            const isSplit = splitShippingToggle ? splitShippingToggle.checked : false;
+            
+            // Address 1 Details
+            const name1 = document.getElementById("checkout-name").value.trim();
+            const phone1 = document.getElementById("checkout-phone").value.trim();
+            const address1 = document.getElementById("checkout-address").value.trim();
+            const city1 = document.getElementById("checkout-city").value.trim();
+            const notes1 = document.getElementById("checkout-notes").value.trim();
 
-            if (!name || !phone || !address || !city) {
-                alert("Vui lòng điền đầy đủ các thông tin nhận hàng bắt buộc!");
+            if (!name1 || !phone1 || !address1 || !city1) {
+                alert("Vui lòng điền đầy đủ các thông tin nhận hàng bắt buộc của Địa chỉ 1!");
                 return;
             }
 
-            const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+            let name2 = "", phone2 = "", address2 = "", city2 = "", notes2 = "";
+            
+            if (isSplit) {
+                // Address 2 Details
+                name2 = document.getElementById("checkout-name-2").value.trim();
+                phone2 = document.getElementById("checkout-phone-2").value.trim();
+                address2 = document.getElementById("checkout-address-2").value.trim();
+                city2 = document.getElementById("checkout-city-2").value.trim();
+                notes2 = document.getElementById("checkout-notes-2").value.trim();
+
+                if (!name2 || !phone2 || !address2 || !city2) {
+                    alert("Vui lòng điền đầy đủ các thông tin nhận hàng bắt buộc của Địa chỉ 2!");
+                    return;
+                }
+            }
+
             const paymentMethod = document.querySelector('input[name="payment_method"]:checked')?.value || 'cod';
 
-            // Gửi dữ liệu đơn hàng lên backend PHP
-            fetch("place_order.php", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    customer_name: name,
-                    phone: phone,
-                    address: `${address}, ${city}`,
-                    notes: notes,
-                    payment_method: paymentMethod,
-                    cart: cart
+            if (!isSplit) {
+                // Đơn hàng bình thường (1 địa chỉ)
+                const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+                
+                fetch("place_order.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        customer_name: name1,
+                        phone: phone1,
+                        address: `${address1}, ${city1}`,
+                        notes: notes1,
+                        payment_method: paymentMethod,
+                        cart: cart
+                    })
                 })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const newOrder = {
-                        orderId: data.orderId,
-                        customerName: name,
-                        phone: phone,
-                        address: `${address}, ${city}`,
-                        notes: notes,
-                        paymentMethod: paymentMethod,
-                        items: [...cart],
-                        subtotal: totalAmount,
-                        grandTotal: totalAmount,
-                        status: paymentMethod === 'cod' ? 'Đang xử lý' : 'Chờ thanh toán'
-                    };
-                    // Hiển thị giao diện thanh toán tương ứng
-                    showPaymentInterface(newOrder, totalAmount);
-                } else {
-                    alert("Đặt hàng thất bại: " + data.message);
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const newOrder = {
+                            orderId: data.orderId,
+                            customerName: name1,
+                            phone: phone1,
+                            address: `${address1}, ${city1}`,
+                            notes: notes1,
+                            paymentMethod: paymentMethod,
+                            subtotal: totalAmount,
+                            grandTotal: totalAmount
+                        };
+                        showPaymentInterface(newOrder, totalAmount);
+                    } else {
+                        alert("Đặt hàng thất bại: " + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    alert("Không thể kết nối đến máy chủ để tạo đơn hàng!");
+                });
+            } else {
+                // Tách thành 2 đơn hàng khác nhau
+                const cart1 = [];
+                const cart2 = [];
+                
+                // Thu thập gán địa chỉ của từng sản phẩm
+                document.querySelectorAll(".select-item-dest").forEach(select => {
+                    const title = select.getAttribute("data-item-title");
+                    const dest = select.value;
+                    const item = cart.find(i => i.title === title);
+                    if (item) {
+                        if (dest === "1") {
+                            cart1.push(item);
+                        } else {
+                            cart2.push(item);
+                        }
+                    }
+                });
+
+                if (cart1.length === 0) {
+                    alert("Vui lòng gán ít nhất 1 sản phẩm cho Địa chỉ 1!");
+                    return;
                 }
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                alert("Không thể kết nối đến máy chủ để tạo đơn hàng!");
-            });
+                if (cart2.length === 0) {
+                    alert("Vui lòng gán ít nhất 1 sản phẩm cho Địa chỉ 2!");
+                    return;
+                }
+
+                const totalAmount1 = cart1.reduce((sum, item) => sum + item.price * item.quantity, 0);
+                const totalAmount2 = cart2.reduce((sum, item) => sum + item.price * item.quantity, 0);
+                const combinedTotal = totalAmount1 + totalAmount2;
+
+                // Sequential order submission to prevent transaction issues
+                fetch("place_order.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        customer_name: name1,
+                        phone: phone1,
+                        address: `${address1}, ${city1}`,
+                        notes: notes1 + " (Đơn tách 1)",
+                        payment_method: paymentMethod,
+                        cart: cart1
+                    })
+                })
+                .then(r1 => r1.json())
+                .then(data1 => {
+                    if (!data1.success) {
+                        alert("Đặt đơn hàng 1 thất bại: " + data1.message);
+                        return;
+                    }
+                    
+                    // Đơn 1 thành công, đặt tiếp đơn 2
+                    fetch("place_order.php", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            customer_name: name2,
+                            phone: phone2,
+                            address: `${address2}, ${city2}`,
+                            notes: notes2 + " (Đơn tách 2)",
+                            payment_method: paymentMethod,
+                            cart: cart2
+                        })
+                    })
+                    .then(r2 => r2.json())
+                    .then(data2 => {
+                        if (!data2.success) {
+                            alert("Đặt đơn hàng 2 thất bại (Đơn 1 đã tạo #" + data1.orderId + "): " + data2.message);
+                            return;
+                        }
+                        
+                        // Cả 2 đơn thành công!
+                        const combinedOrder = {
+                            isSplit: true,
+                            orderId: `${data1.orderId} & ${data2.orderId}`,
+                            customerName: `${name1} / ${name2}`,
+                            phone: `${phone1} / ${phone2}`,
+                            address: `ĐC1: ${address1}, ${city1} | ĐC2: ${address2}, ${city2}`,
+                            notes: `Đơn 1: ${notes1} | Đơn 2: ${notes2}`,
+                            paymentMethod: paymentMethod,
+                            subtotal: combinedTotal,
+                            grandTotal: combinedTotal
+                        };
+                        showPaymentInterface(combinedOrder, combinedTotal);
+                    })
+                    .catch(err => {
+                        console.error("Error order 2:", err);
+                        alert("Không thể kết nối đến máy chủ để tạo đơn hàng 2!");
+                    });
+                })
+                .catch(err => {
+                    console.error("Error order 1:", err);
+                    alert("Không thể kết nối đến máy chủ để tạo đơn hàng 1!");
+                });
+            }
         });
     }
 
@@ -163,13 +267,10 @@ document.addEventListener("DOMContentLoaded", function () {
         document.body.style.overflow = "hidden";
 
         if (order.paymentMethod === "cod") {
-            // Giao diện COD thành công trực tiếp
             renderCODSuccess(order);
         } else if (order.paymentMethod === "bank") {
-            // Giao diện chuyển khoản MB Bank kèm mã QR
             renderQRBankTransfer(order, totalAmount);
         } else if (order.paymentMethod === "card") {
-            // Giao diện nhập thẻ Visa giả lập
             renderVisaCardPayment(order, totalAmount);
         }
 
@@ -187,7 +288,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 <p class="text-secondary mb-4" style="font-size: 13px; line-height: 1.6;">
                     Cảm ơn bạn đã lựa chọn TechLuxury. Mã đơn hàng của bạn là <strong class="text-white">#${order.orderId}</strong>.<br>
                     Phương thức thanh toán: <strong class="text-warning">COD (Nhận hàng thanh toán)</strong>.<br>
-                    Chúng tôi sẽ liên hệ số điện thoại <strong class="text-white">${order.phone}</strong> để xác nhận đơn hàng và giao hàng trong thời gian sớm nhất.
+                    Chúng tôi sẽ liên hệ để xác nhận đơn hàng và giao hàng trong thời gian sớm nhất.
                 </p>
                 <button class="btn-checkout w-100" id="btn-success-close">QUAY VỀ TRANG CHỦ</button>
             </div>
@@ -235,7 +336,7 @@ document.addEventListener("DOMContentLoaded", function () {
         `;
 
         document.getElementById("btn-confirm-bank-transfer").addEventListener("click", function() {
-            // Cập nhật trạng thái trong localStorage
+            // Cập nhật trạng thái
             updateOrderStatus(order.orderId, "Đã thanh toán");
 
             // Hiển thị màn hình thành công
@@ -276,7 +377,7 @@ document.addEventListener("DOMContentLoaded", function () {
             </div>
         `;
 
-        // Định dạng thẻ Visa tự động khi nhập
+        // Format credit card number and expiry inputs
         const cardInput = document.getElementById("visa-card-number");
         if (cardInput) {
             cardInput.addEventListener("input", function(e) {
@@ -312,7 +413,7 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("visa-payment-form").addEventListener("submit", function(e) {
             e.preventDefault();
 
-            // Hiển thị vòng xoay đang xử lý
+            // Display loading processing modal
             orderSuccessModal.innerHTML = `
                 <div class="specs-modal-content text-center p-5">
                     <div class="spinner-border text-warning mb-4" role="status" style="width: 3rem; height: 3rem; border-width: 4px;">
@@ -324,10 +425,10 @@ document.addEventListener("DOMContentLoaded", function () {
             `;
 
             setTimeout(function() {
-                // Cập nhật trạng thái trong localStorage
+                // Update statuses
                 updateOrderStatus(order.orderId, "Đã thanh toán");
 
-                // Hiển thị màn hình thành công
+                // Render success
                 renderSuccessState(order, "Thanh toán trực tuyến thành công! Giao dịch của bạn đã được xác nhận bảo mật. Cảm ơn quý khách!");
             }, 1800);
         });
@@ -351,23 +452,25 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function updateOrderStatus(orderId, newStatus) {
-        fetch("update_order_status.php", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                order_code: orderId,
-                status: newStatus
+        // Hỗ trợ cập nhật nhiều đơn cùng lúc khi tách đơn (phân cách bằng " & ")
+        const orderIds = orderId.toString().split(" & ");
+        orderIds.forEach(id => {
+            fetch("update_order_status.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    order_code: id.trim(),
+                    status: newStatus
+                })
             })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (!data.success) {
-                console.error("Cập nhật trạng thái đơn hàng thất bại:", data.message);
-            }
-        })
-        .catch(err => console.error("Error updating order status:", err));
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    console.error("Cập nhật trạng thái đơn hàng thất bại cho #" + id + ":", data.message);
+                }
+            })
+            .catch(err => console.error("Error updating order status:", err));
+        });
     }
 
     function bindCloseBtn() {

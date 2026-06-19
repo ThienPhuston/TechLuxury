@@ -104,7 +104,11 @@ if (!isset($path_prefix)) {
                     </div>
                 </div>
                 
-                <div class="modal-actions mt-4">
+                <div class="modal-actions mt-4 d-flex align-items-center gap-3">
+                    <div class="product-qty-wrapper d-flex align-items-center gap-1">
+                        <span class="small text-secondary me-1">Số lượng:</span>
+                        <input type="number" id="modal-product-qty" class="form-control form-control-sm text-center text-white" value="1" min="1" style="width: 70px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); font-size: 13px; padding: 6px; border-radius: 8px;">
+                    </div>
                     <button class="btn-buy-modal" id="modal-add-to-cart-btn">
                         <i class="fas fa-shopping-cart"></i> THÊM VÀO GIỎ HÀNG
                     </button>

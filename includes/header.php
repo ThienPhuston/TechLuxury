@@ -165,13 +165,21 @@ document.addEventListener("DOMContentLoaded", function() {
     const userStatusContainer = document.getElementById("user-header-status");
     const prefix = "<?php echo $path_prefix; ?>";
     
-    // Đồng bộ session PHP với localStorage
+    // Đồng bộ session PHP với localStorage và xử lý tự động đăng xuất nếu không chọn Ghi nhớ đăng nhập
     const phpUser = <?php echo isset($_SESSION['user']) ? json_encode($_SESSION['user']) : 'null'; ?>;
     if (phpUser) {
         localStorage.setItem("logged_in_user", JSON.stringify(phpUser));
+        if (localStorage.getItem("remember_me") !== "true") {
+            if (!sessionStorage.getItem("session_active")) {
+                sessionStorage.setItem("session_active", "true");
+                window.location.href = prefix + "Account/logout.php";
+                return;
+            }
+        }
     } else {
         localStorage.removeItem("logged_in_user");
     }
+    sessionStorage.setItem("session_active", "true");
     
     const loggedInUser = phpUser;
     

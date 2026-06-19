@@ -23,6 +23,11 @@ include("../includes/header.php");
             </div>
 
             <div id="login-error-msg" class="text-danger small mb-3 text-center" style="display: none; font-weight: 600;"></div>
+
+            <div class="mb-3 d-flex align-items-center gap-2">
+                <input type="checkbox" id="login-remember" style="width: auto; cursor: pointer;">
+                <label for="login-remember" class="text-secondary small" style="cursor: pointer; font-size: 12px; user-select: none;">Ghi nhớ đăng nhập</label>
+            </div>
             
             <button type="submit" class="w-100 btn-checkout mb-3" style="border: none; padding: 12px 0;">ĐĂNG NHẬP</button>
             
@@ -61,6 +66,11 @@ document.addEventListener("DOMContentLoaded", function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                // Lưu trạng thái ghi nhớ đăng nhập
+                const remember = document.getElementById("login-remember").checked;
+                localStorage.setItem("remember_me", remember ? "true" : "false");
+                sessionStorage.setItem("session_active", "true");
+
                 // Lưu vào localStorage để đồng bộ với phía client
                 localStorage.setItem("logged_in_user", JSON.stringify(data.user));
                 alert("Đăng nhập thành công! Chào mừng " + data.user.fullname);
