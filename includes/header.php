@@ -45,6 +45,9 @@ $path_prefix = $relative_path;
 </head>
 
 <body>
+<div class="scroll-progress-bar" id="scroll-progress"></div>
+<div class="glow-blob glow-blob-1"></div>
+<div class="glow-blob glow-blob-2"></div>
 
 <header>
     <div class="top-header">

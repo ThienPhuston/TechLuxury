@@ -21,7 +21,7 @@ include("includes/header.php");
 </section>
 
 <!-- Premium Categories Section -->
-<section class="categories">
+<section class="categories reveal-element">
     <div class="container">
         <h2>DANH MỤC SẢN PHẨM</h2>
         <div class="categories-grid">
@@ -57,7 +57,7 @@ try {
     $sale_products = [];
 }
 ?>
-<section class="sale-section">
+<section class="sale-section reveal-element">
     <div class="container">
         <h2>🔥 SẢN PHẨM KHUYẾN MÃI ĐẶC BIỆT</h2>
         <div class="products-grid">
@@ -98,7 +98,7 @@ try {
 </section>
 
 <!-- Premium Featured Section -->
-<section class="featured py-5">
+<section class="featured py-5 reveal-element">
     <div class="container">
         <h2 class="featured-title text-center mb-4">SẢN PHẨM NỔI BẬT</h2>
 
@@ -280,7 +280,7 @@ try {
 </section>
 
 <!-- Luxury Benefits Section -->
-<section class="why-choose-us">
+<section class="why-choose-us reveal-element">
     <div class="container">
         <h2>ĐẶC QUYỀN KHI CHỌN TECHLUXURY</h2>
         <div class="benefits-grid">

@@ -46,6 +46,77 @@ try {
             ");
         }
 
+        // Auto-create brands table
+        $conn->exec("
+            CREATE TABLE IF NOT EXISTS `brands` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `name` VARCHAR(50) NOT NULL UNIQUE,
+                `display_name` VARCHAR(100) NOT NULL,
+                `logo_img` VARCHAR(255) DEFAULT NULL,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ");
+
+        // Seed default brands if empty
+        $check_brands = $conn->query("SELECT COUNT(*) FROM `brands`")->fetchColumn();
+        if ($check_brands == 0) {
+            $conn->exec("
+                INSERT INTO `brands` (`name`, `display_name`, `logo_img`) VALUES
+                ('apple', 'Apple', 'apple-logo.png'),
+                ('samsung', 'Samsung', 'samsung-logo.png'),
+                ('dell', 'Dell', 'dell-logo.png'),
+                ('asus', 'Asus', 'asus-logo.png'),
+                ('sony', 'Sony', 'sony-logo.png'),
+                ('xiaomi', 'Xiaomi', 'xiaomi-logo.png')
+            ");
+        }
+
+        // Auto-migrate products to add brand_id column and foreign key if missing
+        $check_brand_id = $conn->query("SHOW COLUMNS FROM `products` LIKE 'brand_id'")->fetch();
+        if (!$check_brand_id) {
+            $conn->exec("ALTER TABLE `products` ADD COLUMN `brand_id` INT NULL AFTER `category`");
+            $conn->exec("ALTER TABLE `products` ADD CONSTRAINT `fk_products_brand` FOREIGN KEY (`brand_id`) REFERENCES `brands` (`id`) ON DELETE SET NULL");
+            
+            // Link existing seed products to brand_id
+            $conn->exec("UPDATE `products` SET `brand_id` = (SELECT `id` FROM `brands` WHERE `name` = 'apple') WHERE LCASE(`name`) LIKE '%macbook%' OR LCASE(`name`) LIKE '%iphone%' OR LCASE(`name`) LIKE '%airpod%'");
+            $conn->exec("UPDATE `products` SET `brand_id` = (SELECT `id` FROM `brands` WHERE `name` = 'samsung') WHERE LCASE(`name`) LIKE '%samsung%' OR LCASE(`name`) LIKE '%galaxy%' OR LCASE(`name`) LIKE '%buds%'");
+            $conn->exec("UPDATE `products` SET `brand_id` = (SELECT `id` FROM `brands` WHERE `name` = 'dell') WHERE LCASE(`name`) LIKE '%dell%'");
+            $conn->exec("UPDATE `products` SET `brand_id` = (SELECT `id` FROM `brands` WHERE `name` = 'asus') WHERE LCASE(`name`) LIKE '%asus%' OR LCASE(`name`) LIKE '%rog%'");
+            $conn->exec("UPDATE `products` SET `brand_id` = (SELECT `id` FROM `brands` WHERE `name` = 'sony') WHERE LCASE(`name`) LIKE '%sony%'");
+            $conn->exec("UPDATE `products` SET `brand_id` = (SELECT `id` FROM `brands` WHERE `name` = 'xiaomi') WHERE LCASE(`name`) LIKE '%xiaomi%'");
+        }
+
+        // Auto-create product_reviews table
+        $conn->exec("
+            CREATE TABLE IF NOT EXISTS `product_reviews` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `product_id` INT NOT NULL,
+                `user_fullname` VARCHAR(100) NOT NULL,
+                `rating` INT NOT NULL DEFAULT 5,
+                `comment` TEXT DEFAULT NULL,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ");
+
+        // Seed default product reviews if empty
+        $check_reviews = $conn->query("SELECT COUNT(*) FROM `product_reviews`")->fetchColumn();
+        if ($check_reviews == 0) {
+            // Get some active product IDs
+            $product_ids = $conn->query("SELECT id FROM `products` ORDER BY id ASC LIMIT 5")->fetchAll(PDO::FETCH_COLUMN);
+            if (count($product_ids) >= 4) {
+                $conn->exec("
+                    INSERT INTO `product_reviews` (`product_id`, `user_fullname`, `rating`, `comment`) VALUES
+                    (" . $product_ids[0] . ", 'Trần Minh Hoàng', 5, 'Máy siêu mạnh, màn hình đẹp xuất sắc. Rất đáng tiền!'),
+                    (" . $product_ids[0] . ", 'Lê Thị Mai', 4, 'Thiết kế đẹp nhưng hơi nặng một chút. Hiệu năng tuyệt vời.'),
+                    (" . $product_ids[1] . ", 'Nguyễn Văn Nam', 5, 'Dòng XPS này dùng làm văn phòng và đồ họa nhẹ rất mượt mà.'),
+                    (" . $product_ids[2] . ", 'Phạm Thanh Sơn', 5, 'iPhone 16 Pro Max chụp ảnh quá đỉnh, màu titan tự nhiên rất đẹp.'),
+                    (" . $product_ids[2] . ", 'Đỗ Mỹ Linh', 5, 'Pin trâu, dùng cả ngày không hết. Màn hình siêu mượt.'),
+                    (" . $product_ids[3] . ", 'Vũ Hoàng Hải', 4, 'Bút S-Pen rất tiện, tuy nhiên máy hơi to so với tay mình.')
+                ");
+            }
+        }
+
         // Auto-create import_vouchers table
         $conn->exec("
             CREATE TABLE IF NOT EXISTS `import_vouchers` (

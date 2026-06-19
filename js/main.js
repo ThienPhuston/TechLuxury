@@ -7,6 +7,18 @@ document.addEventListener("DOMContentLoaded", function () {
         return path.includes("/page/") || path.includes("/account/") || path.includes("/admin/");
     };
 
+    // Helper to calculate relative prefix to the 'page/' directory dynamically
+    const getPagePath = (fileName) => {
+        const path = window.location.pathname.toLowerCase();
+        if (path.includes("/page/")) {
+            return fileName;
+        } else if (path.includes("/account/") || path.includes("/admin/")) {
+            return "../page/" + fileName;
+        } else {
+            return "page/" + fileName;
+        }
+    };
+
     // ----------------------------------------------------------------
     // 1. DỊCH VỤ GIỎ HÀNG (LocalStorage)
     // ----------------------------------------------------------------
@@ -51,6 +63,18 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         }
         saveCart();
+        
+        // Trigger cart badge bounce animation
+        const badge = document.querySelector(".cart-badge");
+        if (badge) {
+            badge.classList.remove("cart-bounce-anim");
+            void badge.offsetWidth; // Force reflow to restart animation
+            badge.classList.add("cart-bounce-anim");
+            badge.addEventListener("animationend", () => {
+                badge.classList.remove("cart-bounce-anim");
+            }, { once: true });
+        }
+        
         openCartDrawer();
     }
 
@@ -119,8 +143,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         featuredSec.scrollIntoView({ behavior: "smooth" });
                     } else {
                         // Lấy đường dẫn động sang trang sản phẩm
-                        const isSubpage = checkIsSubpage();
-                        window.location.href = isSubpage ? "product.php" : "page/product.php";
+                        window.location.href = getPagePath("product.php");
                     }
                 });
             }
@@ -790,9 +813,41 @@ document.addEventListener("DOMContentLoaded", function () {
                 alert("Giỏ hàng của bạn đang trống!");
                 return;
             }
-            const isSubpage = checkIsSubpage();
-            const pathPrefix = isSubpage ? "" : "page/";
-            window.location.href = pathPrefix + "checkout.php";
+            window.location.href = getPagePath("checkout.php");
         });
+    }
+
+    // ----------------------------------------------------------------
+    // 6. PREMIUM LUXURY EFFECTS (Scroll Progress & Scroll Reveal)
+    // ----------------------------------------------------------------
+    
+    // Scroll Progress Bar
+    const scrollProgress = document.getElementById("scroll-progress");
+    if (scrollProgress) {
+        window.addEventListener("scroll", function() {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = height > 0 ? (winScroll / height) * 100 : 0;
+            scrollProgress.style.width = scrolled + "%";
+        });
+    }
+
+    // Scroll Reveal (Intersection Observer)
+    const revealElements = document.querySelectorAll(".reveal-element");
+    if (revealElements.length > 0) {
+        const revealObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add("revealed");
+                    observer.unobserve(entry.target); // Animate once
+                }
+            });
+        }, {
+            root: null,
+            threshold: 0.1,
+            rootMargin: "0px 0px -40px 0px"
+        });
+        
+        revealElements.forEach(el => revealObserver.observe(el));
     }
 });

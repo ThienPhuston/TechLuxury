@@ -965,8 +965,10 @@ document.addEventListener("DOMContentLoaded", function() {
                 <td>${stockHTML}</td>
                 <td><span class="text-uppercase small" style="letter-spacing: 0.5px;">${p.category}</span></td>
                 <td>
-                    <button class="btn btn-sm btn-outline-info edit-product-btn me-1" data-index="${idx}"><i class="fas fa-edit"></i> Sửa</button>
-                    <button class="btn btn-sm btn-outline-danger delete-product-btn" data-index="${idx}"><i class="fas fa-trash-alt"></i> Xóa</button>
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn-admin-action edit edit-product-btn" data-index="${idx}" title="Sửa"><i class="fas fa-edit"></i></button>
+                        <button class="btn-admin-action delete delete-product-btn" data-index="${idx}" title="Xóa"><i class="fas fa-trash-alt"></i></button>
+                    </div>
                 </td>
             `;
             productsBody.appendChild(tr);
@@ -1345,10 +1347,12 @@ document.addEventListener("DOMContentLoaded", function() {
                 <td><span class="badge ${u.role === 'admin' ? 'bg-danger' : 'bg-primary'}">${u.role === 'admin' ? 'ADMIN' : 'MEMBER'}</span></td>
                 <td><span class="status-pill ${u.status === 'active' ? 'success' : 'danger'}">${u.status === 'active' ? 'Hoạt động' : 'Đã khóa'}</span></td>
                 <td>
-                    <button class="btn btn-sm btn-outline-warning toggle-role-btn me-1" data-index="${index}"><i class="fas fa-user-shield"></i> Chuyển quyền</button>
-                    <button class="btn btn-sm ${u.status === 'active' ? 'btn-outline-danger' : 'btn-outline-success'} toggle-status-btn" data-index="${index}">
-                        <i class="fas ${u.status === 'active' ? 'fa-lock' : 'fa-unlock'}"></i> ${u.status === 'active' ? 'Khóa' : 'Mở khóa'}
-                    </button>
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn-admin-action edit toggle-role-btn" data-index="${index}" title="Chuyển quyền"><i class="fas fa-user-shield"></i></button>
+                        <button class="btn-admin-action ${u.status === 'active' ? 'delete' : 'success'} toggle-status-btn" data-index="${index}" title="${u.status === 'active' ? 'Khóa' : 'Mở khóa'}">
+                            <i class="fas ${u.status === 'active' ? 'fa-lock' : 'fa-unlock'}"></i>
+                        </button>
+                    </div>
                 </td>
             `;
             customersBody.appendChild(tr);
@@ -1472,8 +1476,10 @@ document.addEventListener("DOMContentLoaded", function() {
                 <td><strong>${cat.name}</strong></td>
                 <td>${cat.display_name}</td>
                 <td>
-                    <button class="btn btn-sm btn-outline-info edit-cat-btn me-1" data-id="${cat.id}" data-index="${idx}"><i class="fas fa-edit"></i> Sửa</button>
-                    <button class="btn btn-sm btn-outline-danger delete-cat-btn" data-id="${cat.id}"><i class="fas fa-trash-alt"></i> Xóa</button>
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn-admin-action edit edit-cat-btn" data-id="${cat.id}" data-index="${idx}" title="Sửa"><i class="fas fa-edit"></i></button>
+                        <button class="btn-admin-action delete delete-cat-btn" data-id="${cat.id}" title="Xóa"><i class="fas fa-trash-alt"></i></button>
+                    </div>
                 </td>
             `;
             body.appendChild(tr);
@@ -1631,8 +1637,10 @@ document.addEventListener("DOMContentLoaded", function() {
                 <td><span class="text-gold fw-bold">${formatVND(parseFloat(v.total_amount))}</span></td>
                 <td><span class="small text-secondary">${v.created_at}</span></td>
                 <td>
-                    <button class="btn btn-sm btn-outline-info edit-voucher-btn me-1" data-index="${idx}"><i class="fas fa-edit"></i> Sửa</button>
-                    <button class="btn btn-sm btn-outline-danger delete-voucher-btn" data-id="${v.id}"><i class="fas fa-trash-alt"></i> Xóa</button>
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn-admin-action edit edit-voucher-btn" data-index="${idx}" title="Sửa"><i class="fas fa-edit"></i></button>
+                        <button class="btn-admin-action delete delete-voucher-btn" data-id="${v.id}" title="Xóa"><i class="fas fa-trash-alt"></i></button>
+                    </div>
                 </td>
             `;
             body.appendChild(tr);

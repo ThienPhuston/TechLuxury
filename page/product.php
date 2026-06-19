@@ -1,5 +1,6 @@
 <?php 
 $path_prefix = "../"; 
+require_once '../includes/db.php';
 include("../includes/header.php"); 
 ?>
 
@@ -9,7 +10,7 @@ include("../includes/header.php");
 	<h1 class="mb-4">TẤT CẢ SẢN PHẨM</h1>
 
     <!-- Elegant Collapsible Filter Panel -->
-    <div class="advanced-filter-panel mb-5">
+    <div class="advanced-filter-panel mb-5 reveal-element">
         <div class="filter-panel-header d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-3">
             <!-- Search Name (Always visible) -->
             <div class="search-main-wrapper flex-grow-1">
@@ -108,10 +109,9 @@ include("../includes/header.php");
         </div>
     </div>
 
-	<div class="products row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3 justify-content-center" id="products-container">
+	<div class="products row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3 justify-content-center reveal-element" id="products-container">
 
 	<?php
-	require_once '../includes/db.php';
 	
 	try {
 	    $stmt = $conn->query("SELECT * FROM products ORDER BY id ASC");
