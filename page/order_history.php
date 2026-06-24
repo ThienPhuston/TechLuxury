@@ -73,28 +73,68 @@ try {
                         <div class="order-card-hover-border"></div>
 
                         <!-- Card Header -->
-                        <div class="order-card-header d-flex flex-wrap justify-content-between align-items-center gap-3 pb-3 mb-4" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <div class="order-card-header d-flex flex-wrap justify-content-between align-items-center gap-3 pb-3 mb-3" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
                             <div>
-                                <span class="order-code fs-5 fw-bold text-gold" style="color: var(--accent-gold); font-family: monospace; letter-spacing: 0.5px;">#<?php echo htmlspecialchars($order['order_code']); ?></span>
+                                <span class="order-code fs-5 fw-bold" style="color: var(--accent-gold); font-family: monospace; letter-spacing: 0.5px;">#<?php echo htmlspecialchars($order['order_code']); ?></span>
                                 <span class="text-secondary small ms-3 d-inline-block" style="font-size: 12px;">
                                     <i class="far fa-clock me-1"></i> <?php echo date('d/m/Y H:i', strtotime($order['created_at'])); ?>
                                 </span>
                             </div>
-                            <div>
-                                <?php 
-                                $status = $order['status'];
-                                $badge_style = 'background: rgba(212,175,55,0.1); color: var(--accent-gold); border: 1px solid rgba(212,175,55,0.2);';
-                                if ($status === 'Đã thanh toán' || $status === 'Hoàn thành' || $status === 'Đang giao hàng') {
-                                    $badge_style = 'background: rgba(46,204,113,0.1); color: #2ecc71; border: 1px solid rgba(46,204,113,0.2);';
-                                } elseif ($status === 'Đã hủy') {
-                                    $badge_style = 'background: rgba(255,71,87,0.1); color: #ff4757; border: 1px solid rgba(255,71,87,0.2);';
-                                }
-                                ?>
-                                <span class="badge px-3 py-2 text-uppercase fw-bold" style="<?php echo $badge_style; ?> border-radius: 6px; font-size: 10px; letter-spacing: 0.8px;">
-                                    <?php echo htmlspecialchars($status); ?>
-                                </span>
-                            </div>
+                            <?php 
+                            $status = $order['status'];
+                            $badge_color = 'rgba(212,175,55,0.1)';
+                            $badge_text  = '#d4af37';
+                            if ($status === 'Hoàn thành' || $status === 'Đã thanh toán') { $badge_color = 'rgba(46,204,113,0.1)'; $badge_text = '#2ecc71'; }
+                            elseif ($status === 'Đã hủy') { $badge_color = 'rgba(255,71,87,0.1)'; $badge_text = '#ff4757'; }
+                            ?>
+                            <span class="badge px-3 py-2 text-uppercase fw-bold" style="background:<?php echo $badge_color; ?>;color:<?php echo $badge_text; ?>;border:1px solid <?php echo $badge_text; ?>33;border-radius:6px;font-size:10px;letter-spacing:0.8px;">
+                                <?php echo htmlspecialchars($status); ?>
+                            </span>
                         </div>
+
+                        <!-- Order Status Stepper -->
+                        <?php
+                        $steps = [
+                            ['key' => 'pending',    'label' => 'Đặt hàng',   'icon' => 'fa-check'],
+                            ['key' => 'confirmed',  'label' => 'Xác nhận',    'icon' => 'fa-thumbs-up'],
+                            ['key' => 'packing',    'label' => 'Đóng gói',    'icon' => 'fa-box'],
+                            ['key' => 'shipping',   'label' => 'Đang giao',   'icon' => 'fa-truck'],
+                            ['key' => 'done',       'label' => 'Hoàn thành',   'icon' => 'fa-star'],
+                        ];
+                        $status_map = [
+                            'Chờ xác nhận' => 1,
+                            'Đang xử lý'   => 1,
+                            'Đã xác nhận'  => 2,
+                            'Đang đóng gói' => 3,
+                            'Đang giao hàng' => 4,
+                            'Đã giao'        => 5,
+                            'Hoàn thành'     => 5,
+                            'Đã thanh toán' => 5,
+                            'Đã hủy'         => 0,
+                        ];
+                        $current_step = $status_map[$status] ?? 1;
+                        $is_cancelled = ($status === 'Đã hủy');
+                        ?>
+                        <?php if (!$is_cancelled): ?>
+                        <div class="order-stepper mb-4">
+                            <?php foreach ($steps as $i => $step): ?>
+                            <?php $step_num = $i + 1; $is_done = ($step_num <= $current_step); $is_active = ($step_num === $current_step); ?>
+                            <div class="stepper-item <?php echo $is_done ? 'done' : ''; ?> <?php echo $is_active ? 'active' : ''; ?>">
+                                <div class="stepper-circle">
+                                    <i class="fas <?php echo $is_done && !$is_active ? 'fa-check' : $step['icon']; ?>"></i>
+                                </div>
+                                <span class="stepper-label"><?php echo $step['label']; ?></span>
+                            </div>
+                            <?php if ($i < count($steps) - 1): ?>
+                            <div class="stepper-line <?php echo $step_num < $current_step ? 'done' : ''; ?>"></div>
+                            <?php endif; ?>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php else: ?>
+                        <div class="mb-4 py-2 px-3 rounded-3 d-inline-flex align-items-center gap-2" style="background:rgba(255,71,87,0.06);border:1px solid rgba(255,71,87,0.15);color:#ff4757;font-size:13px;">
+                            <i class="fas fa-times-circle"></i> Đơn hàng đã bị hủy
+                        </div>
+                        <?php endif; ?>
 
                         <!-- Card Body (Products purchased) -->
                         <div class="order-card-body d-flex flex-column gap-3 mb-4">
@@ -167,6 +207,77 @@ try {
 }
 .order-item-row:last-child {
     border-bottom: none !important;
+}
+
+/* === ORDER STEPPER === */
+.order-stepper {
+    display: flex;
+    align-items: center;
+    padding: 16px 0 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.order-stepper::-webkit-scrollbar { display: none; }
+.stepper-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 8px;
+}
+.stepper-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+    border: 2px solid rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: rgba(255,255,255,0.25);
+    transition: all 0.4s ease;
+    position: relative;
+    z-index: 1;
+}
+.stepper-item.done .stepper-circle {
+    background: rgba(212,175,55,0.1);
+    border-color: rgba(212,175,55,0.4);
+    color: #d4af37;
+}
+.stepper-item.active .stepper-circle {
+    background: linear-gradient(135deg, rgba(212,175,55,0.25), rgba(212,175,55,0.05));
+    border-color: #d4af37;
+    color: #d4af37;
+    box-shadow: 0 0 16px rgba(212,175,55,0.25);
+    animation: stepPulse 2s ease-in-out infinite;
+}
+.stepper-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.3);
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+    transition: color 0.3s;
+}
+.stepper-item.done .stepper-label,
+.stepper-item.active .stepper-label {
+    color: #d4af37;
+}
+.stepper-line {
+    flex: 1;
+    height: 2px;
+    background: rgba(255,255,255,0.06);
+    margin-bottom: 24px;
+    min-width: 24px;
+    transition: background 0.4s;
+}
+.stepper-line.done {
+    background: linear-gradient(90deg, rgba(212,175,55,0.6), rgba(212,175,55,0.3));
+}
+@keyframes stepPulse {
+    0%, 100% { box-shadow: 0 0 16px rgba(212,175,55,0.25); }
+    50%       { box-shadow: 0 0 28px rgba(212,175,55,0.45); }
 }
 </style>
 

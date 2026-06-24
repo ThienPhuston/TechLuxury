@@ -125,6 +125,7 @@ include("../includes/header.php");
 
 		<div class="col product-col" data-category="<?php echo htmlspecialchars($p['category']); ?>" data-index="<?php echo $i; ?>">
 			<div class="card product-square-card"
+                 data-id="<?php echo $p['id']; ?>"
                  data-title="<?php echo htmlspecialchars($p['name']); ?>"
                  data-price="<?php echo number_format($p['price'], 0, '', '.'); ?>đ"
                  data-img="../images/<?php echo htmlspecialchars($p['img']); ?>"
@@ -144,6 +145,12 @@ include("../includes/header.php");
 				<?php if($p['is_sale']) { ?>
 					<div class="sale-badge">-20%</div>
 				<?php } ?>
+				<button class="wishlist-btn-card" 
+						data-wishlist-btn 
+						data-wishlist-title="<?php echo htmlspecialchars($p['name']); ?>" 
+						onclick="event.stopPropagation(); toggleWishlist('<?php echo addslashes($p['name']); ?>', '<?php echo $p['price']; ?>', 'images/<?php echo htmlspecialchars($p['img']); ?>', <?php echo $p['stock']; ?>, this)">
+					<i class="far fa-heart"></i>
+				</button>
 				<div class="img-square-box">
 					<img src="../images/<?php echo htmlspecialchars($p['img']); ?>" alt="<?php echo htmlspecialchars($p['name']); ?>">
 				</div>

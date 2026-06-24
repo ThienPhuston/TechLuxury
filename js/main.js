@@ -41,17 +41,20 @@ document.addEventListener("DOMContentLoaded", function () {
         let existingItem = cart.find(item => item.title === title);
         if (existingItem) {
             if (existingItem.quantity + qtyToAdd > stock) {
-                alert(`Không thể thêm sản phẩm "${title}". Kho chỉ còn lại ${stock} sản phẩm (bạn đã có ${existingItem.quantity} trong giỏ)!`);
+                if (window.showToast) showToast(`Kho chỉ còn ${stock} sản phẩm (giỏ đã có ${existingItem.quantity})!`, 'warning');
+                else alert(`Không thể thêm “${title}”. Kho chỉ còn ${stock} sản phẩm!`);
                 return;
             }
             existingItem.quantity += qtyToAdd;
         } else {
             if (stock <= 0) {
-                alert(`Sản phẩm "${title}" đã hết hàng!`);
+                if (window.showToast) showToast(`Sản phẩm “${title}” đã hết hàng!`, 'error');
+                else alert(`Sản phẩm “${title}” đã hết hàng!`);
                 return;
             }
             if (qtyToAdd > stock) {
-                alert(`Không thể thêm! Số lượng yêu cầu (${qtyToAdd}) vượt quá tồn kho hiện có (${stock})!`);
+                if (window.showToast) showToast(`Số lượng yêu cầu (${qtyToAdd}) vượt tồn kho (${stock})!`, 'warning');
+                else alert(`Số lượng yêu cầu vượt tồn kho!`);
                 return;
             }
             cart.push({
@@ -63,6 +66,9 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         }
         saveCart();
+        
+        // Toast notification
+        if (window.showToast) showToast(`Đã thêm <strong>${title}</strong> vào giỏ hàng!`, 'cart');
         
         // Trigger cart badge bounce animation
         const badge = document.querySelector(".cart-badge");
@@ -87,7 +93,8 @@ document.addEventListener("DOMContentLoaded", function () {
         let item = cart.find(item => item.title === title);
         if (item) {
             if (change > 0 && item.quantity + change > (item.stock || 9999)) {
-                alert(`Không thể thêm! Kho chỉ còn lại ${item.stock || 9999} sản phẩm "${title}"!`);
+                if (window.showToast) showToast(`Kho chỉ còn ${item.stock} sản phẩm!`, 'warning');
+                else alert(`Kho chỉ còn lại ${item.stock || 9999} sản phẩm “${title}”!`);
                 return;
             }
             item.quantity += change;
@@ -365,6 +372,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
  
                 // Lấy thông tin từ các thuộc tính data-*
+                let id = card.getAttribute("data-id");
+                if (id) {
+                    let isSubDir = window.location.pathname.includes("/page/") || window.location.pathname.includes("/Account/");
+                    let prefix = isSubDir ? "" : "page/";
+                    window.location.href = prefix + "product-detail.php?id=" + id;
+                    return;
+                }
+
                 let title = card.getAttribute("data-title");
                 let price = card.getAttribute("data-price");
                 let img = card.getAttribute("data-img");
@@ -804,13 +819,63 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Hỗ trợ tái khởi tạo sự kiện khi chuyển tab hoặc phân trang (được gọi từ file khác nếu cần)
     window.reinitProductCards = initProductCardEvents;
+    window.addToCart = addToCart;
+
+    // ================================================================
+    // WISHLIST SYSTEM
+    // ================================================================
+    const WISHLIST_KEY = 'techluxury_wishlist';
+
+    function getWishlist() {
+        try { return JSON.parse(localStorage.getItem(WISHLIST_KEY)) || []; } catch(e) { return []; }
+    }
+
+    function saveWishlistData(list) {
+        localStorage.setItem(WISHLIST_KEY, JSON.stringify(list));
+    }
+
+    window.toggleWishlist = function(title, price, img, stock, btnEl) {
+        let wl = getWishlist();
+        const idx = wl.findIndex(p => p.title === title);
+        if (idx >= 0) {
+            wl.splice(idx, 1);
+            saveWishlistData(wl);
+            if (btnEl) { btnEl.innerHTML = '<i class="far fa-heart"></i>'; btnEl.style.color = ''; }
+            if (window.showToast) showToast('Đã xóa khỏi yêu thích!', 'info', 2000);
+        } else {
+            let numPrice = parseInt((price+'').replace(/[^0-9]/g,''));
+            wl.push({ title, price: numPrice, img, stock: stock || 99 });
+            saveWishlistData(wl);
+            if (btnEl) { btnEl.innerHTML = '<i class="fas fa-heart"></i>'; btnEl.style.color = '#ff4757'; }
+            if (window.showToast) showToast('<strong>' + title + '</strong> đã thêm vào yêu thích!', 'success', 2500);
+        }
+    };
+
+    // Sync wishlist button states on load
+    function syncWishlistButtons() {
+        const wl = getWishlist();
+        const titles = wl.map(p => p.title);
+        document.querySelectorAll('[data-wishlist-btn]').forEach(btn => {
+            const t = btn.getAttribute('data-wishlist-title');
+            if (titles.includes(t)) {
+                btn.innerHTML = '<i class="fas fa-heart"></i>';
+                btn.style.color = '#ff4757';
+            } else {
+                btn.innerHTML = '<i class="far fa-heart"></i>';
+                btn.style.color = '';
+            }
+        });
+    }
+    syncWishlistButtons();
+    window.syncWishlistButtons = syncWishlistButtons;
 
     // Lắng nghe sự kiện nút thanh toán trong giỏ hàng
     const checkoutBtn = document.getElementById("checkout-btn");
     if (checkoutBtn) {
         checkoutBtn.addEventListener("click", function() {
             if (cart.length === 0) {
-                alert("Giỏ hàng của bạn đang trống!");
+                if (window.showToast) showToast('Giỏ hàng đang trống! Vui lòng thêm sản phẩm.', 'warning');
+                else alert("Giỏ hàng của bạn đang trống!");
                 return;
             }
             window.location.href = getPagePath("checkout.php");
@@ -849,5 +914,49 @@ document.addEventListener("DOMContentLoaded", function () {
         });
         
         revealElements.forEach(el => revealObserver.observe(el));
+    }
+
+    // Newsletter subscription handler
+    const newsletterForm = document.querySelector(".newsletter-form");
+    if (newsletterForm) {
+        const input = newsletterForm.querySelector("input[type='email']");
+        const button = newsletterForm.querySelector("button");
+
+        const submitNewsletter = () => {
+            const email = input.value.trim();
+            if (!email) {
+                if (window.showToast) showToast("Vui lòng nhập địa chỉ email của bạn!", "warning");
+                return;
+            }
+
+            fetch(getPagePath("subscribe_newsletter.php"), {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    if (window.showToast) showToast(data.message, "success");
+                    input.value = "";
+                } else {
+                    if (window.showToast) showToast(data.message, "error");
+                }
+            })
+            .catch(err => {
+                if (window.showToast) showToast("Đã xảy ra lỗi hệ thống, vui lòng thử lại sau!", "error");
+            });
+        };
+
+        if (button) {
+            button.addEventListener("click", submitNewsletter);
+        }
+        if (input) {
+            input.addEventListener("keypress", function(e) {
+                if (e.key === "Enter") {
+                    submitNewsletter();
+                }
+            });
+        }
     }
 });

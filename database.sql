@@ -50,6 +50,18 @@ CREATE TABLE IF NOT EXISTS `product_reviews` (
     FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Table: coupons
+CREATE TABLE IF NOT EXISTS `coupons` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `code` VARCHAR(50) NOT NULL UNIQUE,
+    `discount_type` VARCHAR(20) NOT NULL, -- 'percent' or 'fixed'
+    `discount_value` DECIMAL(15,2) NOT NULL,
+    `min_order_value` DECIMAL(15,2) NOT NULL DEFAULT 0,
+    `max_discount` DECIMAL(15,2) DEFAULT NULL,
+    `expiry_date` DATE DEFAULT NULL,
+    `status` VARCHAR(20) NOT NULL DEFAULT 'active'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Table: orders
 CREATE TABLE IF NOT EXISTS `orders` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
@@ -60,6 +72,8 @@ CREATE TABLE IF NOT EXISTS `orders` (
     `address` TEXT NOT NULL,
     `notes` TEXT DEFAULT NULL,
     `payment_method` VARCHAR(20) NOT NULL, -- 'cod', 'bank', 'card'
+    `coupon_code` VARCHAR(50) NULL,
+    `discount_amount` DECIMAL(15,2) NOT NULL DEFAULT 0,
     `total_amount` DECIMAL(15,2) NOT NULL,
     `status` VARCHAR(50) NOT NULL DEFAULT 'Chờ thanh toán', -- 'Chờ thanh toán', 'Đang xử lý', 'Đã thanh toán', 'Đang giao hàng', 'Hoàn thành', 'Đã hủy'
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -154,3 +168,9 @@ INSERT INTO `product_reviews` (`product_id`, `user_fullname`, `rating`, `comment
 (4, 'Vũ Hoàng Hải', 4, 'Bút S-Pen rất tiện, tuy nhiên máy hơi to so với tay mình.'),
 (5, 'Nguyễn Bích Ngọc', 5, 'Chống ồn cực tốt, đeo êm tai không bị đau đầu.')
 ON DUPLICATE KEY UPDATE `id`=`id`;
+
+-- Seed default coupons
+INSERT INTO `coupons` (`code`, `discount_type`, `discount_value`, `min_order_value`, `max_discount`, `status`) VALUES
+('TECHLUXURY500', 'fixed', 500000.00, 2000000.00, 500000.00, 'active'),
+('GOLD10', 'percent', 10.00, 5000000.00, 2000000.00, 'active')
+ON DUPLICATE KEY UPDATE `code`=`code`;

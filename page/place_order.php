@@ -13,6 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $notes = trim($input['notes'] ?? '');
     $payment_method = trim($input['payment_method'] ?? 'cod');
     $cart = $input['cart'] ?? [];
+    $coupon_code = isset($input['coupon_code']) ? trim($input['coupon_code']) : '';
 
     if (empty($customer_name) || empty($phone) || empty($address) || empty($cart)) {
         echo json_encode(['success' => false, 'message' => 'Thông tin đặt hàng không đầy đủ!']);
@@ -26,7 +27,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $price = intval($item['price']);
             $qty = intval($item['quantity']);
             $total_amount += $price * $qty;
+        }
 
+        // Server-side Coupon validation & discount calculation
+        $verified_discount = 0;
+        if (!empty($coupon_code)) {
+            $cp_stmt = $conn->prepare("SELECT * FROM coupons WHERE code = :code LIMIT 1");
+            $cp_stmt->execute(['code' => $coupon_code]);
+            $coupon = $cp_stmt->fetch();
+            if ($coupon && $coupon['status'] === 'active' && $total_amount >= floatval($coupon['min_order_value'])) {
+                $max_uses_ok = true;
+                if (isset($coupon['max_uses']) && intval($coupon['max_uses']) !== -1 && intval($coupon['used_count']) >= intval($coupon['max_uses'])) {
+                    $max_uses_ok = false;
+                }
+
+                if ($max_uses_ok) {
+                    if ($coupon['discount_type'] === 'fixed') {
+                        $verified_discount = floatval($coupon['discount_value']);
+                    } elseif ($coupon['discount_type'] === 'percent') {
+                        $verified_discount = $total_amount * (floatval($coupon['discount_value']) / 100);
+                        if ($coupon['max_discount'] !== null && $verified_discount > floatval($coupon['max_discount'])) {
+                            $verified_discount = floatval($coupon['max_discount']);
+                        }
+                    }
+                    if ($verified_discount > $total_amount) {
+                        $verified_discount = $total_amount;
+                    }
+                }
+            }
+        }
+        $total_amount = $total_amount - $verified_discount;
+        if ($total_amount < 0) {
+            $total_amount = 0;
+        }
+
+        foreach ($cart as $item) {
+            $qty = intval($item['quantity']);
             // Pre-check stock
             $prod_stmt = $conn->prepare("SELECT stock FROM products WHERE name = :name LIMIT 1");
             $prod_stmt->execute(['name' => $item['title']]);
@@ -67,8 +103,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Insert into orders
         $order_stmt = $conn->prepare("
-            INSERT INTO orders (user_id, order_code, customer_name, phone, address, notes, payment_method, total_amount, status) 
-            VALUES (:user_id, :order_code, :customer_name, :phone, :address, :notes, :payment_method, :total_amount, :status)
+            INSERT INTO orders (user_id, order_code, customer_name, phone, address, notes, payment_method, coupon_code, discount_amount, total_amount, status) 
+            VALUES (:user_id, :order_code, :customer_name, :phone, :address, :notes, :payment_method, :coupon_code, :discount_amount, :total_amount, :status)
         ");
         $order_stmt->execute([
             'user_id' => $user_id,
@@ -78,6 +114,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'address' => $address,
             'notes' => $notes,
             'payment_method' => $payment_method,
+            'coupon_code' => !empty($coupon_code) ? $coupon_code : null,
+            'discount_amount' => $verified_discount,
             'total_amount' => $total_amount,
             'status' => $status
         ]);
@@ -117,6 +155,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'qty' => $qty,
                 'name' => $item['title']
             ]);
+        }
+
+        // Increment coupon used count if coupon applied successfully
+        if (!empty($coupon_code) && $verified_discount > 0) {
+            $update_coupon_uses = $conn->prepare("UPDATE coupons SET used_count = used_count + 1 WHERE code = :code");
+            $update_coupon_uses->execute(['code' => $coupon_code]);
         }
 
         // Commit transaction

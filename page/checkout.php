@@ -139,12 +139,26 @@ if (!isset($_SESSION['user'])) {
                         <div id="checkout-order-items" style="max-height: 350px; overflow-y: auto; padding-right: 5px;">
                             <!-- Dynamically loaded via js -->
                         </div>
+
+                        <!-- Coupon input field -->
+                        <div class="checkout-coupon-box mt-4 pt-3" style="border-top: 1px dashed var(--border-color);">
+                            <label class="text-secondary small fw-bold mb-2"><i class="fas fa-ticket-alt text-warning me-1"></i> MÃ GIẢM GIÁ (COUPON)</label>
+                            <div class="input-group">
+                                <input type="text" id="coupon-code-input" placeholder="Ví dụ: TECHLUXURY500..." class="form-control text-white" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); padding: 10px 14px; border-radius: 8px 0 0 8px; font-size: 13px; font-weight: 700; text-transform: uppercase;">
+                                <button class="btn btn-outline-warning" type="button" id="btn-apply-coupon" style="border-radius: 0 8px 8px 0; font-size: 12px; font-weight: 700; padding: 0 16px; border-color: var(--border-color);">ÁP DỤNG</button>
+                            </div>
+                            <div id="coupon-message" class="small mt-2" style="display: none;"></div>
+                        </div>
                     </div>
                     
                     <div class="checkout-total-sec">
                         <div class="checkout-total-row">
                             <span>Tạm tính</span>
                             <span id="checkout-subtotal">0đ</span>
+                        </div>
+                        <div class="checkout-total-row" id="discount-row" style="display: none;">
+                            <span>Chiết khấu (Giảm giá)</span>
+                            <span id="checkout-discount" class="text-danger fw-bold">-0đ</span>
                         </div>
                         <div class="checkout-total-row">
                             <span>Phí vận chuyển</span>

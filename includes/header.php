@@ -39,6 +39,7 @@ $path_prefix = $relative_path;
     <!-- CSS Stylesheets -->
     <link rel="stylesheet" href="<?php echo $path_prefix; ?>css/style.css">
     <link rel="stylesheet" href="<?php echo $path_prefix; ?>css/bootstrap-custom.css">
+    <link rel="stylesheet" href="<?php echo $path_prefix; ?>css/ai-chat.css">
 
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -168,21 +169,13 @@ document.addEventListener("DOMContentLoaded", function() {
     const userStatusContainer = document.getElementById("user-header-status");
     const prefix = "<?php echo $path_prefix; ?>";
     
-    // Đồng bộ session PHP với localStorage và xử lý tự động đăng xuất nếu không chọn Ghi nhớ đăng nhập
+    // Đồng bộ session PHP với localStorage
     const phpUser = <?php echo isset($_SESSION['user']) ? json_encode($_SESSION['user']) : 'null'; ?>;
     if (phpUser) {
         localStorage.setItem("logged_in_user", JSON.stringify(phpUser));
-        if (localStorage.getItem("remember_me") !== "true") {
-            if (!sessionStorage.getItem("session_active")) {
-                sessionStorage.setItem("session_active", "true");
-                window.location.href = prefix + "Account/logout.php";
-                return;
-            }
-        }
     } else {
         localStorage.removeItem("logged_in_user");
     }
-    sessionStorage.setItem("session_active", "true");
     
     const loggedInUser = phpUser;
     
@@ -212,8 +205,14 @@ document.addEventListener("DOMContentLoaded", function() {
                     </div>
                     <div class="dropdown-divider"></div>
                     ${adminLink}
+                    <a href="${prefix}Account/profile.php">
+                        <i class="fas fa-user-circle"></i> Hồ sơ tài khoản
+                    </a>
                     <a href="${prefix}page/order_history.php">
                         <i class="fas fa-history"></i> Lịch sử đơn hàng
+                    </a>
+                    <a href="${prefix}page/wishlist.php">
+                        <i class="fas fa-heart" style="color:#ff4757"></i> Yêu thích
                     </a>
                     <a href="javascript:void(0)" class="logout-btn" id="header-logout-btn">
                         <i class="fas fa-sign-out-alt"></i> Đăng xuất

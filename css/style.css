@@ -68,9 +68,9 @@ body {
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 30px;
 }
 
 /* Glassmorphic Sticky Header */
@@ -90,7 +90,7 @@ header {
   justify-content: space-between;
   align-items: center;
   padding: 15px 40px;
-  max-width: 1300px;
+  max-width: 1500px;
   margin: 0 auto;
 }
 
@@ -629,9 +629,9 @@ footer {
   display: grid;
   grid-template-columns: 1.5fr 1fr 1fr;
   gap: 60px;
-  max-width: 1200px;
+  max-width: 1440px;
   margin: 0 auto 50px;
-  padding: 0 20px;
+  padding: 0 30px;
 }
 
 .footer-box h3 {
@@ -2511,6 +2511,38 @@ form button:hover {
   color: #ffffff;
   transform: translateY(-3px) scale(1.05);
   box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);
+}
+
+/* Wishlist heart button on product cards */
+.wishlist-btn-card {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  z-index: 10;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(15, 19, 28, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.wishlist-btn-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--accent-gold);
+  color: var(--text-white);
+  transform: scale(1.1);
+}
+
+.wishlist-btn-card:active {
+  transform: scale(0.95);
 }
 
 

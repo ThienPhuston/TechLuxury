@@ -66,13 +66,18 @@ try {
                 $original_price = $p['price'] / (1 - $disc_pct / 100);
             ?>
                 <div class="sale-card"
+                    data-id="<?php echo $p['id']; ?>"
                     data-title="<?php echo htmlspecialchars($p['name']); ?>"
                     data-price="<?php echo number_format($p['price'], 0, '', '.'); ?>đ"
                     data-img="./images/<?php echo htmlspecialchars($p['img']); ?>"
-                    data-specs="<?php echo htmlspecialchars($p['specs'] ?? ''); ?>"
-                    data-category="<?php echo htmlspecialchars($p['category']); ?>"
                     data-stock="<?php echo $p['stock']; ?>">
                     <div class="sale-badge">-<?php echo $disc_pct; ?>%</div>
+                    <button class="wishlist-btn-card" 
+                            data-wishlist-btn 
+                            data-wishlist-title="<?php echo htmlspecialchars($p['name']); ?>" 
+                            onclick="event.stopPropagation(); toggleWishlist('<?php echo addslashes($p['name']); ?>', '<?php echo $p['price']; ?>', 'images/<?php echo htmlspecialchars($p['img']); ?>', <?php echo $p['stock']; ?>, this)">
+                        <i class="far fa-heart"></i>
+                    </button>
                     <img src="./images/<?php echo htmlspecialchars($p['img']); ?>" alt="<?php echo htmlspecialchars($p['name']); ?>">
                     <div>
                         <h3><?php echo htmlspecialchars($p['name']); ?></h3>
@@ -215,6 +220,7 @@ try {
             ?>
                 <div class="col product-col" data-category="<?php echo htmlspecialchars($p['category']); ?>">
                     <div class="card product-square-card"
+                        data-id="<?php echo $p['id']; ?>"
                         data-title="<?php echo htmlspecialchars($p['name']); ?>"
                         data-price="<?php echo number_format($p['price'], 0, '', '.'); ?>đ"
                         data-img="./images/<?php echo htmlspecialchars($p['img']); ?>"
@@ -231,6 +237,12 @@ try {
                                     elseif (strpos($title_lower, 'xiaomi') !== false) echo 'xiaomi';
                                     else echo 'other';
                                     ?>">
+                        <button class="wishlist-btn-card" 
+                                data-wishlist-btn 
+                                data-wishlist-title="<?php echo htmlspecialchars($p['name']); ?>" 
+                                onclick="event.stopPropagation(); toggleWishlist('<?php echo addslashes($p['name']); ?>', '<?php echo $p['price']; ?>', 'images/<?php echo htmlspecialchars($p['img']); ?>', <?php echo $p['stock']; ?>, this)">
+                            <i class="far fa-heart"></i>
+                        </button>
                         <div class="img-square-box">
                             <img src="./images/<?php echo htmlspecialchars($p['img']); ?>" alt="<?php echo htmlspecialchars($p['name']); ?>">
                         </div>

@@ -119,11 +119,88 @@ if (!isset($path_prefix)) {
 </div>
 <div class="specs-modal-overlay" id="specs-overlay"></div>
 
-<!-- Bootstrap JS Bundle (Fixed integrity block by removing faulty hashes) -->
+<!-- Bootstrap JS Bundle -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Toast Notification Container -->
+<div id="toast-container" style="position:fixed;bottom:24px;right:24px;z-index:99999;display:flex;flex-direction:column;gap:10px;pointer-events:none;"></div>
+
+<style>
+.tl-toast {
+    pointer-events: all;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 18px;
+    border-radius: 14px;
+    background: rgba(15,19,28,0.95);
+    border: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    color: white;
+    font-size: 13px;
+    font-weight: 500;
+    min-width: 260px;
+    max-width: 340px;
+    opacity: 0;
+    transform: translateX(40px);
+    transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.16,1,0.3,1);
+    position: relative;
+    overflow: hidden;
+    line-height: 1.4;
+}
+.tl-toast.show { opacity: 1; transform: translateX(0); }
+.tl-toast.hide { opacity: 0; transform: translateX(40px); }
+.tl-toast .tl-toast-icon { font-size: 16px; margin-top: 1px; flex-shrink: 0; }
+.tl-toast .tl-toast-close {
+    position: absolute; top: 10px; right: 12px;
+    background: none; border: none; color: rgba(255,255,255,0.3);
+    font-size: 14px; cursor: pointer; padding: 0; line-height: 1;
+    transition: color 0.2s;
+}
+.tl-toast .tl-toast-close:hover { color: white; }
+.tl-toast-bar {
+    position: absolute; bottom: 0; left: 0;
+    height: 3px; border-radius: 0 0 14px 14px;
+    animation: toastBarShrink linear forwards;
+    opacity: 0.7;
+}
+@keyframes toastBarShrink {
+    from { width: 100%; }
+    to   { width: 0%; }
+}
+</style>
+
+<script>
+/* ===== GLOBAL TOAST SYSTEM ===== */
+window.showToast = function(message, type = 'success', duration = 3500) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const icons = { success:'fa-check-circle', error:'fa-times-circle', warning:'fa-exclamation-triangle', info:'fa-info-circle', cart:'fa-shopping-cart' };
+    const colors = { success:'#2ecc71', error:'#ff4757', warning:'#ffa502', info:'#667eea', cart:'#d4af37' };
+    const color = colors[type] || colors.info;
+    const icon  = icons[type]  || icons.info;
+    const toast = document.createElement('div');
+    toast.className = 'tl-toast';
+    toast.style.borderColor = color + '33';
+    toast.innerHTML = `
+        <span class="tl-toast-icon" style="color:${color};"><i class="fas ${icon}"></i></span>
+        <span style="padding-right:20px;">${message}</span>
+        <button class="tl-toast-close" onclick="this.closest('.tl-toast').remove()">&times;</button>
+        <div class="tl-toast-bar" style="background:${color};animation-duration:${duration}ms;"></div>
+    `;
+    container.appendChild(toast);
+    requestAnimationFrame(() => requestAnimationFrame(() => toast.classList.add('show')));
+    setTimeout(() => {
+        toast.classList.add('hide');
+        setTimeout(() => toast.remove(), 400);
+    }, duration);
+};
+</script>
 
 <!-- Custom JS Files -->
 <script src="<?php echo $path_prefix; ?>js/main.js"></script>
+<script src="<?php echo $path_prefix; ?>js/ai-chat.js"></script>
 
 </body>
 </html>

@@ -140,6 +140,59 @@ try {
                 FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         ");
+
+        // Auto-create coupons table
+        $conn->exec("
+            CREATE TABLE IF NOT EXISTS `coupons` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `code` VARCHAR(50) NOT NULL UNIQUE,
+                `discount_type` VARCHAR(20) NOT NULL,
+                `discount_value` DECIMAL(15,2) NOT NULL,
+                `min_order_value` DECIMAL(15,2) NOT NULL DEFAULT 0,
+                `max_discount` DECIMAL(15,2) DEFAULT NULL,
+                `max_uses` INT NOT NULL DEFAULT -1,
+                `used_count` INT NOT NULL DEFAULT 0,
+                `expiry_date` DATE DEFAULT NULL,
+                `status` VARCHAR(20) NOT NULL DEFAULT 'active'
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ");
+
+        $check_max_uses = $conn->query("SHOW COLUMNS FROM `coupons` LIKE 'max_uses'")->fetch();
+        if (!$check_max_uses) {
+            $conn->exec("ALTER TABLE `coupons` ADD COLUMN `max_uses` INT NOT NULL DEFAULT -1 AFTER `max_discount`");
+        }
+        $check_used_count = $conn->query("SHOW COLUMNS FROM `coupons` LIKE 'used_count'")->fetch();
+        if (!$check_used_count) {
+            $conn->exec("ALTER TABLE `coupons` ADD COLUMN `used_count` INT NOT NULL DEFAULT 0 AFTER `max_uses`");
+        }
+
+        // Seed default coupons if table is empty
+        $check_coupons = $conn->query("SELECT COUNT(*) FROM `coupons`")->fetchColumn();
+        if ($check_coupons == 0) {
+            $conn->exec("
+                INSERT INTO `coupons` (`code`, `discount_type`, `discount_value`, `min_order_value`, `max_discount`, `max_uses`, `used_count`, `status`) VALUES
+                ('TECHLUXURY500', 'fixed', 500000, 2000000, 500000, -1, 0, 'active'),
+                ('GOLD10', 'percent', 10, 5000000, 2000000, -1, 0, 'active')
+            ");
+        }
+
+        // Auto-migrate orders table to add coupon_code and discount_amount columns
+        $check_coupon_code = $conn->query("SHOW COLUMNS FROM `orders` LIKE 'coupon_code'")->fetch();
+        if (!$check_coupon_code) {
+            $conn->exec("ALTER TABLE `orders` ADD COLUMN `coupon_code` VARCHAR(50) NULL AFTER `payment_method`");
+        }
+        $check_discount_amount = $conn->query("SHOW COLUMNS FROM `orders` LIKE 'discount_amount'")->fetch();
+        if (!$check_discount_amount) {
+            $conn->exec("ALTER TABLE `orders` ADD COLUMN `discount_amount` DECIMAL(15,2) NOT NULL DEFAULT 0 AFTER `coupon_code`");
+        }
+        // Auto-create newsletter_subscribers table
+        $conn->exec("
+            CREATE TABLE IF NOT EXISTS `newsletter_subscribers` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `email` VARCHAR(150) NOT NULL UNIQUE,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ");
     } catch (PDOException $e) {
         // Fallback or ignore if table does not exist yet (it will be created by database.sql)
     }

@@ -40,6 +40,33 @@ try {
     // Fail silently or log
 }
 
+// Helper function to resolve brand_id from product name
+function getBrandIdFromName($conn, $product_name) {
+    $name_lower = strtolower($product_name);
+    $brand_slug = 'other';
+    if (strpos($name_lower, 'macbook') !== false || strpos($name_lower, 'iphone') !== false || strpos($name_lower, 'airpod') !== false || strpos($name_lower, 'apple') !== false) {
+        $brand_slug = 'apple';
+    } elseif (strpos($name_lower, 'samsung') !== false || strpos($name_lower, 'galaxy') !== false || strpos($name_lower, 'buds') !== false) {
+        $brand_slug = 'samsung';
+    } elseif (strpos($name_lower, 'dell') !== false) {
+        $brand_slug = 'dell';
+    } elseif (strpos($name_lower, 'asus') !== false || strpos($name_lower, 'rog') !== false) {
+        $brand_slug = 'asus';
+    } elseif (strpos($name_lower, 'sony') !== false) {
+        $brand_slug = 'sony';
+    } elseif (strpos($name_lower, 'xiaomi') !== false) {
+        $brand_slug = 'xiaomi';
+    }
+    
+    try {
+        $stmt = $conn->prepare("SELECT id FROM brands WHERE name = ? LIMIT 1");
+        $stmt->execute([$brand_slug]);
+        return $stmt->fetchColumn() ?: null;
+    } catch (PDOException $e) {
+        return null;
+    }
+}
+
 $action = $_GET['action'] ?? '';
 
 switch ($action) {
@@ -71,13 +98,41 @@ switch ($action) {
             ");
             $recent_orders = $recent_stmt->fetchAll();
 
+            // Monthly revenue for the current year
+            $monthly_revenue = array_fill(1, 12, 0);
+            $year = date('Y');
+            $month_stmt = $conn->prepare("
+                SELECT MONTH(created_at) AS month, SUM(total_amount) AS total 
+                FROM orders 
+                WHERE YEAR(created_at) = :year AND status IN ('Đã thanh toán', 'Đang giao hàng', 'Hoàn thành')
+                GROUP BY MONTH(created_at)
+            ");
+            $month_stmt->execute(['year' => $year]);
+            $months_data = $month_stmt->fetchAll();
+            foreach ($months_data as $row) {
+                $monthly_revenue[intval($row['month'])] = floatval($row['total']);
+            }
+
+            // Category sales distribution
+            $cat_dist_stmt = $conn->query("
+                SELECT p.category, SUM(oi.quantity) AS total_sold 
+                FROM order_items oi
+                JOIN products p ON oi.product_name = p.name
+                JOIN orders o ON oi.order_id = o.id
+                WHERE o.status IN ('Đã thanh toán', 'Đang giao hàng', 'Hoàn thành')
+                GROUP BY p.category
+            ");
+            $category_distribution = $cat_dist_stmt->fetchAll();
+
             echo json_encode([
                 'success' => true,
                 'revenue' => $revenue,
                 'orders_count' => intval($orders_count),
                 'products_count' => intval($products_count),
                 'customers_count' => intval($customers_count),
-                'recent_orders' => $recent_orders
+                'recent_orders' => $recent_orders,
+                'monthly_revenue' => array_values($monthly_revenue),
+                'category_distribution' => $category_distribution
             ]);
         } catch (PDOException $e) {
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
@@ -124,11 +179,13 @@ switch ($action) {
             }
 
             try {
+                $brand_id = getBrandIdFromName($conn, $name);
+
                 if (!empty($id)) {
                     // Update mode
                     $stmt = $conn->prepare("
                         UPDATE products 
-                        SET name = :name, price = :price, cost_price = :cost_price, stock = :stock, category = :category, is_sale = :is_sale, img = :img, specs = :specs 
+                        SET name = :name, price = :price, cost_price = :cost_price, stock = :stock, category = :category, is_sale = :is_sale, img = :img, specs = :specs, brand_id = :brand_id 
                         WHERE id = :id
                     ");
                     $stmt->execute([
@@ -140,14 +197,15 @@ switch ($action) {
                         'is_sale' => $is_sale,
                         'img' => $img,
                         'specs' => $specs,
+                        'brand_id' => $brand_id,
                         'id' => $id
                     ]);
                     echo json_encode(['success' => true, 'message' => 'Cập nhật sản phẩm thành công!']);
                 } else {
                     // Insert mode
                     $stmt = $conn->prepare("
-                        INSERT INTO products (name, price, cost_price, stock, category, is_sale, img, specs) 
-                        VALUES (:name, :price, :cost_price, :stock, :category, :is_sale, :img, :specs)
+                        INSERT INTO products (name, price, cost_price, stock, category, is_sale, img, specs, brand_id) 
+                        VALUES (:name, :price, :cost_price, :stock, :category, :is_sale, :img, :specs, :brand_id)
                     ");
                     $stmt->execute([
                         'name' => $name,
@@ -157,7 +215,8 @@ switch ($action) {
                         'category' => $category,
                         'is_sale' => $is_sale,
                         'img' => $img,
-                        'specs' => $specs
+                        'specs' => $specs,
+                        'brand_id' => $brand_id
                     ]);
                     echo json_encode(['success' => true, 'message' => 'Thêm sản phẩm thành công!']);
                 }
@@ -546,6 +605,128 @@ switch ($action) {
                     $conn->rollBack();
                 }
                 echo json_encode(['success' => false, 'message' => 'Lỗi: ' . $e->getMessage()]);
+            }
+        }
+        break;
+
+    case 'coupons_list':
+        try {
+            $stmt = $conn->query("SELECT * FROM coupons ORDER BY id DESC");
+            $coupons = $stmt->fetchAll();
+            echo json_encode(['success' => true, 'coupons' => $coupons]);
+        } catch (PDOException $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        break;
+
+    case 'save_coupon':
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $id = $input['id'] ?? null;
+            $code = trim($input['code'] ?? '');
+            $discount_value = floatval($input['discount_value'] ?? 0);
+            $min_order_value = floatval($input['min_order_value'] ?? 0);
+            $max_uses = intval($input['max_uses'] ?? -1);
+            $status = ($input['status'] == 1 || $input['status'] === 'active') ? 'active' : 'inactive';
+
+            if (empty($code) || $discount_value <= 0) {
+                echo json_encode(['success' => false, 'message' => 'Mã coupon và giá trị giảm phải hợp lệ!']);
+                exit;
+            }
+
+            try {
+                if (!empty($id)) {
+                    // Check duplicate code
+                    $check = $conn->prepare("SELECT id FROM coupons WHERE code = :code AND id != :id");
+                    $check->execute(['code' => $code, 'id' => $id]);
+                    if ($check->fetch()) {
+                        echo json_encode(['success' => false, 'message' => 'Mã giảm giá này đã tồn tại!']);
+                        exit;
+                    }
+
+                    $stmt = $conn->prepare("
+                        UPDATE coupons 
+                        SET code = :code, discount_value = :discount_value, min_order_value = :min_order_value, 
+                            max_uses = :max_uses, status = :status 
+                        WHERE id = :id
+                    ");
+                    $stmt->execute([
+                        'code' => $code,
+                        'discount_value' => $discount_value,
+                        'min_order_value' => $min_order_value,
+                        'max_uses' => $max_uses,
+                        'status' => $status,
+                        'id' => $id
+                    ]);
+                    echo json_encode(['success' => true, 'message' => 'Cập nhật mã giảm giá thành công!']);
+                } else {
+                    // Check duplicate code
+                    $check = $conn->prepare("SELECT id FROM coupons WHERE code = :code");
+                    $check->execute(['code' => $code]);
+                    if ($check->fetch()) {
+                        echo json_encode(['success' => false, 'message' => 'Mã giảm giá này đã tồn tại!']);
+                        exit;
+                    }
+
+                    $stmt = $conn->prepare("
+                        INSERT INTO coupons (code, discount_type, discount_value, min_order_value, max_uses, status) 
+                        VALUES (:code, 'fixed', :discount_value, :min_order_value, :max_uses, :status)
+                    ");
+                    $stmt->execute([
+                        'code' => $code,
+                        'discount_value' => $discount_value,
+                        'min_order_value' => $min_order_value,
+                        'max_uses' => $max_uses,
+                        'status' => $status
+                    ]);
+                    echo json_encode(['success' => true, 'message' => 'Thêm mã giảm giá thành công!']);
+                }
+            } catch (PDOException $e) {
+                echo json_encode(['success' => false, 'message' => 'Lỗi database: ' . $e->getMessage()]);
+            }
+        }
+        break;
+
+    case 'delete_coupon':
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $id = $input['id'] ?? null;
+            if (!$id) {
+                echo json_encode(['success' => false, 'message' => 'ID không hợp lệ!']);
+                exit;
+            }
+
+            try {
+                $stmt = $conn->prepare("DELETE FROM coupons WHERE id = :id");
+                $stmt->execute(['id' => $id]);
+                echo json_encode(['success' => true, 'message' => 'Xóa mã giảm giá thành công!']);
+            } catch (PDOException $e) {
+                echo json_encode(['success' => false, 'message' => 'Lỗi database: ' . $e->getMessage()]);
+            }
+        }
+        break;
+
+    case 'toggle_coupon':
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $id = $input['id'] ?? null;
+            if (!$id) {
+                echo json_encode(['success' => false, 'message' => 'ID không hợp lệ!']);
+                exit;
+            }
+
+            try {
+                $check = $conn->prepare("SELECT status FROM coupons WHERE id = :id");
+                $check->execute(['id' => $id]);
+                $curr = $check->fetchColumn();
+                $new_status = ($curr === 'active') ? 'inactive' : 'active';
+
+                $stmt = $conn->prepare("UPDATE coupons SET status = :status WHERE id = :id");
+                $stmt->execute(['status' => $new_status, 'id' => $id]);
+
+                echo json_encode(['success' => true, 'message' => 'Đổi trạng thái mã giảm giá thành công!', 'new_status' => $new_status]);
+            } catch (PDOException $e) {
+                echo json_encode(['success' => false, 'message' => 'Lỗi database: ' . $e->getMessage()]);
             }
         }
         break;

@@ -14,6 +14,10 @@ document.addEventListener("DOMContentLoaded", function () {
         return amount.toLocaleString("vi-VN") + "đ";
     }
 
+    // Coupon states and handlers (declared here to avoid TDZ)
+    let appliedCoupon = null;
+    let subtotalAmount = 0;
+
     // Render danh sách sản phẩm tóm tắt
     const orderItemsContainer = document.getElementById("checkout-order-items");
     const subtotalText = document.getElementById("checkout-subtotal");
@@ -52,6 +56,68 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (subtotalText) subtotalText.textContent = formatVND(totalAmount);
         if (grandTotalText) grandTotalText.textContent = formatVND(totalAmount);
+        subtotalAmount = totalAmount;
+    }
+
+    // Coupon states and handlers
+
+    const btnApplyCoupon = document.getElementById("btn-apply-coupon");
+    const couponInput = document.getElementById("coupon-code-input");
+    const couponMessage = document.getElementById("coupon-message");
+    const discountRow = document.getElementById("discount-row");
+    const discountText = document.getElementById("checkout-discount");
+
+    if (btnApplyCoupon && couponInput) {
+        btnApplyCoupon.addEventListener("click", function() {
+            const code = couponInput.value.trim().toUpperCase();
+            if (!code) {
+                showCouponMessage("Vui lòng nhập mã giảm giá!", "text-danger");
+                return;
+            }
+
+            fetch("validate_coupon.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    coupon_code: code,
+                    subtotal: subtotalAmount
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    appliedCoupon = {
+                        code: data.code,
+                        discount: parseFloat(data.discount_amount)
+                    };
+                    
+                    if (discountRow) discountRow.style.display = "flex";
+                    if (discountText) discountText.textContent = "-" + formatVND(appliedCoupon.discount);
+                    
+                    const newGrandTotal = subtotalAmount - appliedCoupon.discount;
+                    if (grandTotalText) grandTotalText.textContent = formatVND(newGrandTotal);
+                    
+                    showCouponMessage(data.message, "text-success");
+                } else {
+                    appliedCoupon = null;
+                    if (discountRow) discountRow.style.display = "none";
+                    if (grandTotalText) grandTotalText.textContent = formatVND(subtotalAmount);
+                    showCouponMessage(data.message, "text-danger");
+                }
+            })
+            .catch(err => {
+                console.error("Coupon validation error:", err);
+                showCouponMessage("Không thể kiểm tra mã giảm giá lúc này!", "text-danger");
+            });
+        });
+    }
+
+    function showCouponMessage(text, className) {
+        if (couponMessage) {
+            couponMessage.textContent = text;
+            couponMessage.style.display = "block";
+            couponMessage.className = "small mt-2 " + className;
+        }
     }
 
     // Toggle split shipping UI
@@ -124,6 +190,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (!isSplit) {
                 // Đơn hàng bình thường (1 địa chỉ)
                 const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+                const finalAmount = appliedCoupon ? (totalAmount - appliedCoupon.discount) : totalAmount;
                 
                 fetch("place_order.php", {
                     method: "POST",
@@ -134,7 +201,9 @@ document.addEventListener("DOMContentLoaded", function () {
                         address: `${address1}, ${city1}`,
                         notes: notes1,
                         payment_method: paymentMethod,
-                        cart: cart
+                        cart: cart,
+                        coupon_code: appliedCoupon ? appliedCoupon.code : "",
+                        discount_amount: appliedCoupon ? appliedCoupon.discount : 0
                     })
                 })
                 .then(response => response.json())
@@ -148,9 +217,9 @@ document.addEventListener("DOMContentLoaded", function () {
                             notes: notes1,
                             paymentMethod: paymentMethod,
                             subtotal: totalAmount,
-                            grandTotal: totalAmount
+                            grandTotal: finalAmount
                         };
-                        showPaymentInterface(newOrder, totalAmount);
+                        showPaymentInterface(newOrder, finalAmount);
                     } else {
                         alert("Đặt hàng thất bại: " + data.message);
                     }
@@ -164,7 +233,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 const cart1 = [];
                 const cart2 = [];
                 
-                // Thu thập gán địa chỉ của từng sản phẩm
                 document.querySelectorAll(".select-item-dest").forEach(select => {
                     const title = select.getAttribute("data-item-title");
                     const dest = select.value;
@@ -191,6 +259,18 @@ document.addEventListener("DOMContentLoaded", function () {
                 const totalAmount2 = cart2.reduce((sum, item) => sum + item.price * item.quantity, 0);
                 const combinedTotal = totalAmount1 + totalAmount2;
 
+                let discount1 = 0;
+                let discount2 = 0;
+                let code1 = "";
+                let code2 = "";
+
+                if (appliedCoupon) {
+                    discount1 = appliedCoupon.discount;
+                    code1 = appliedCoupon.code;
+                }
+
+                const finalCombinedTotal = combinedTotal - (discount1 + discount2);
+
                 // Sequential order submission to prevent transaction issues
                 fetch("place_order.php", {
                     method: "POST",
@@ -201,7 +281,9 @@ document.addEventListener("DOMContentLoaded", function () {
                         address: `${address1}, ${city1}`,
                         notes: notes1 + " (Đơn tách 1)",
                         payment_method: paymentMethod,
-                        cart: cart1
+                        cart: cart1,
+                        coupon_code: code1,
+                        discount_amount: discount1
                     })
                 })
                 .then(r1 => r1.json())
@@ -221,7 +303,9 @@ document.addEventListener("DOMContentLoaded", function () {
                             address: `${address2}, ${city2}`,
                             notes: notes2 + " (Đơn tách 2)",
                             payment_method: paymentMethod,
-                            cart: cart2
+                            cart: cart2,
+                            coupon_code: code2,
+                            discount_amount: discount2
                         })
                     })
                     .then(r2 => r2.json())
@@ -241,9 +325,9 @@ document.addEventListener("DOMContentLoaded", function () {
                             notes: `Đơn 1: ${notes1} | Đơn 2: ${notes2}`,
                             paymentMethod: paymentMethod,
                             subtotal: combinedTotal,
-                            grandTotal: combinedTotal
+                            grandTotal: finalCombinedTotal
                         };
-                        showPaymentInterface(combinedOrder, combinedTotal);
+                        showPaymentInterface(combinedOrder, finalCombinedTotal);
                     })
                     .catch(err => {
                         console.error("Error order 2:", err);
